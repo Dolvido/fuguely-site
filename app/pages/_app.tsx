@@ -1,12 +1,16 @@
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { ThemeProvider } from '@material-ui/styles';
+import { Provider } from 'mobx-react';
 import App from 'next/app';
 import Head from 'next/head';
 import React from 'react';
-import { isMobile } from '../lib/isMobile';
-import { themeDark, themeLight } from '../lib/theme';
 
-class MyApp extends App {
+import { themeDark, themeLight } from '../lib/theme';
+import { getUserApiMethod } from '../lib/api/public';
+import { isMobile } from '../lib/isMobile';
+import { getStore, initializeStore, Store } from '../lib/store';
+
+class MyApp extends App<{ isMobile: boolean }> {
   public static async getInitialProps({ Component, ctx }) {
     let firstGridItem = true;
 
@@ -20,9 +24,24 @@ class MyApp extends App {
       Object.assign(pageProps, await Component.getInitialProps(ctx));
     }
 
-    // console.log(pageProps);
+    const appProps = { pageProps };
 
-    return { pageProps };
+    if (getStore()) {
+      return appProps;
+    }
+
+    let userObj = null;
+    try {
+      const { user } = await getUserApiMethod(ctx.req);
+      userObj = user;
+    } catch (error) {
+      console.log(error);
+    }
+
+    return {
+      ...appProps,
+      initialState: { user: userObj, currentUrl: ctx.asPath },
+    };
   }
 
   public componentDidMount() {
@@ -32,20 +51,32 @@ class MyApp extends App {
       jssStyles.parentNode.removeChild(jssStyles);
     }
   }
+
+  private store: Store;
+
+  constructor(props) {
+    console.log('MyApp.constructor');
+
+    super(props);
+
+    this.store = initializeStore(props.initialState);
+  }
+
   public render() {
     const { Component, pageProps } = this.props;
+    const store = this.store;
+
+    const isThemeDark = store.currentUser ? store.currentUser.darkTheme : true;
 
     return (
-      <ThemeProvider theme={false ? themeDark : themeLight}>
+      <ThemeProvider theme={isThemeDark ? themeDark : themeLight}>
         <Head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <link
-            rel="stylesheet"
-            href="https://storage.googleapis.com/async-await/nprogress-dark.min.css?v=1"
-          />
         </Head>
         <CssBaseline />
-        <Component {...pageProps} />
+        <Provider store={store}>
+          <Component {...pageProps} store={store} />
+        </Provider>
       </ThemeProvider>
     );
   }
