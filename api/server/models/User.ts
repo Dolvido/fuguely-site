@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as mongoose from 'mongoose';
 
 import sendEmail from '../aws-ses';
-//import { addToMailchimp } from '../mailchimp';
+import { addToMailchimp } from '../mailchimp';
 import { generateSlug } from '../utils/slugify';
 import getEmailTemplate from './EmailTemplate';
 
@@ -120,7 +120,16 @@ class UserClass extends mongoose.Model {
   }
 
   public static publicFields(): string[] {
-    return ['_id', 'id', 'displayName', 'email', 'avatarUrl', 'slug', 'isSignedupViaGoogle', 'darkTheme',];
+    return [
+      '_id',
+      'id',
+      'displayName',
+      'email',
+      'avatarUrl',
+      'slug',
+      'isSignedupViaGoogle',
+      'darkTheme',
+    ];
   }
 
   public static async signInOrSignUpViaGoogle({
@@ -184,11 +193,11 @@ class UserClass extends mongoose.Model {
       console.error('Email sending error:', err);
     }
 
-    /* try {
+    try {
       await addToMailchimp({ email, listName: 'signups' });
     } catch (error) {
       console.error('Mailchimp error:', error);
-    } */
+    }
 
     return _.pick(newUser, this.publicFields());
   }
@@ -228,11 +237,11 @@ class UserClass extends mongoose.Model {
       console.error('Email sending error:', err);
     }
 
-     /* try {
+     try {
       await addToMailchimp({ email, listName: 'signups' });
     } catch (error) {
       console.error('Mailchimp error:', error);
-    } */
+    } 
 
     return _.pick(newUser, this.publicFields());
   }
