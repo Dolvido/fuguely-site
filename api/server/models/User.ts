@@ -37,6 +37,7 @@ const mongoSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+  darkTheme: Boolean,
 });
 
 export interface UserDocument extends mongoose.Document {
@@ -48,6 +49,7 @@ export interface UserDocument extends mongoose.Document {
   googleId: string;
   googleToken: { accessToken: string; refreshToken: string };
   isSignedupViaGoogle: boolean;
+  darkTheme: boolean;
 }
 
 interface UserModel extends mongoose.Model<UserDocument> {
@@ -62,9 +64,6 @@ interface UserModel extends mongoose.Model<UserDocument> {
     name: string;
     avatarUrl: string;
   }): Promise<UserDocument[]>;
-
-  // define types for toggle theme method
-  toggleTheme({ userId, darkTheme }: { userId: string; darkTheme: boolean }): Promise<void>;
 
   publicFields(): string[];
 
@@ -89,6 +88,9 @@ interface UserModel extends mongoose.Model<UserDocument> {
     uid: string;
     email: string;
   }): Promise<UserDocument>;
+
+  // define types for toggle theme method
+  toggleTheme({ userId, darkTheme }: { userId: string; darkTheme: boolean }): Promise<void>;
 }
 
 class UserClass extends mongoose.Model {
@@ -117,13 +119,8 @@ class UserClass extends mongoose.Model {
       .setOptions({ lean: true });
   }
 
-  // define static toggle theme method
-  public static toggleTheme({ userId, darkTheme }) {
-    return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
-  }
-
   public static publicFields(): string[] {
-    return ['_id', 'id', 'displayName', 'email', 'avatarUrl', 'slug', 'isSignedupViaGoogle'];
+    return ['_id', 'id', 'displayName', 'email', 'avatarUrl', 'slug', 'isSignedupViaGoogle', 'darkTheme',];
   }
 
   public static async signInOrSignUpViaGoogle({
@@ -238,6 +235,12 @@ class UserClass extends mongoose.Model {
     } */
 
     return _.pick(newUser, this.publicFields());
+  }
+
+
+  // define static toggle theme method
+  public static toggleTheme({ userId, darkTheme }) {
+    return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
   }
 }
 
