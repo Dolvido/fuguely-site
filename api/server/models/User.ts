@@ -63,6 +63,9 @@ interface UserModel extends mongoose.Model<UserDocument> {
     avatarUrl: string;
   }): Promise<UserDocument[]>;
 
+  // define types for toggle theme method
+  toggleTheme({ userId, darkTheme }: { userId: string; darkTheme: boolean }): Promise<void>;
+
   publicFields(): string[];
 
   signInOrSignUpViaGoogle({
@@ -112,6 +115,11 @@ class UserClass extends mongoose.Model {
     return this.findByIdAndUpdate(userId, { $set: modifier }, { new: true, runValidators: true })
       .select('displayName avatarUrl slug')
       .setOptions({ lean: true });
+  }
+
+  // define static toggle theme method
+  public static toggleTheme({ userId, darkTheme }) {
+    return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
   }
 
   public static publicFields(): string[] {

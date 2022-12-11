@@ -1,7 +1,8 @@
 import { action, decorate, observable, runInAction } from 'mobx';
 
-import { updateProfileApiMethod } from '../api/team-member';
+import { toggleThemeApiMethod, updateProfileApiMethod } from '../api/team-member';
 import { Store } from './index';
+import * as NProgress from 'nprogress';
 
 class User {
   public store: Store;
@@ -13,6 +14,8 @@ class User {
   public avatarUrl: string | null;
   public isSignedupViaGoogle: boolean;
 
+  public darkTheme = false;
+
   constructor(params) {
     this.store = params.store;
     this._id = params._id;
@@ -21,6 +24,7 @@ class User {
     this.displayName = params.displayName;
     this.avatarUrl = params.avatarUrl;
     this.isSignedupViaGoogle = !!params.isSignedupViaGoogle;
+    this.darkTheme = !!params.darkTheme;
   }
 
   public async updateProfile({ name, avatarUrl }: { name: string; avatarUrl: string }) {
@@ -36,6 +40,18 @@ class User {
     });
   }
 
+  // add store method for toggling theme
+  public async toggleTheme(darkTheme: boolean) {
+    await toggleThemeApiMethod({ darkTheme });
+    runInAction(() => {
+      this.darkTheme = darkTheme;
+    });
+    // mobx and mobx-react do not reactively re-render ThemeProvider from Material-UI when the value for theme changes
+    // so we need to reload the page to get the new theme
+    NProgress.start();
+    NProgress.set(0.5);
+    window.location.reload();
+  }
 }
 
 decorate(User, {
@@ -43,8 +59,10 @@ decorate(User, {
   email: observable,
   displayName: observable,
   avatarUrl: observable,
+  //darkTheme: observable,
 
   updateProfile: action,
+  toggleTheme: action,
 });
 
 export { User };

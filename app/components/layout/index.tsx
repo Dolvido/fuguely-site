@@ -4,6 +4,7 @@ import React from 'react';
 import MenuWithLinks from '../common/MenuWithLinks';
 import Confirmer from '../common/Confirmer';
 import Notifier from '../common/Notifier';
+import { Store } from '../../lib/store';
 
 const styleGrid = {
   width: '100%',
@@ -27,13 +28,18 @@ type Props = {
   children: React.ReactNode;
   firstGridItem?: boolean;
   isMobile?: boolean;
+  store?: Store;
 };
 
 class Layout extends React.Component<Props> {
   public render() {
-    const { children, firstGridItem, isMobile } = this.props;
+    const { children, firstGridItem, isMobile, store } = this.props;
 
-    const isThemeDark = false;
+    const { currentUser } = store;
+
+    console.log(this.props.store.currentUser.darkTheme);
+
+    const isThemeDark = store.currentUser ? store.currentUser.darkTheme : true;
 
     // console.log(isMobile);
 
@@ -132,7 +138,29 @@ class Layout extends React.Component<Props> {
           </Grid>
         ) : null}
         <Grid item sm={firstGridItem ? 10 : 12} xs={12}>
-          {isMobile ? <hr /> : null}
+          <div>
+            {isMobile ? null : (
+              <React.Fragment>
+                <i
+                  style={{
+                    float: 'left',
+                    margin: '15px 0px 10px 25px',
+                    opacity: 0.8,
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    verticalAlign: 'top',
+                  }}
+                  className="material-icons"
+                  onClick={async () => {
+                    await store.currentUser.toggleTheme(!store.currentUser.darkTheme);
+                  }}
+                >
+                  lens
+                </i>
+              </React.Fragment>
+            )}
+            <div style={{ clear: 'both' }} />
+          </div>
           {children}
         </Grid>
         <Notifier />
