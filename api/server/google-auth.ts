@@ -2,13 +2,14 @@ import * as passport from 'passport';
 import { OAuth2Strategy as Strategy } from 'passport-google-oauth';
 
 import User, { UserDocument } from './models/User';
+import Invitation from './models/Invitation';
 
 function setupGoogle({ server }) {
   if (!process.env.GOOGLE_CLIENTID) {
     return;
   }
 
-  const verify = async (accessToken, refreshToken, profile, done) => {
+  const verify = async (req, accessToken, refreshToken, profile, done) => {
     let email;
     let avatarUrl;
 
@@ -29,6 +30,16 @@ function setupGoogle({ server }) {
         avatarUrl,
       });
 
+      let teamSlugOfInvitedTeam;
+      if (user && req.session.invitationToken) {
+        teamSlugOfInvitedTeam = await Invitation.addUserToTeam({
+          token: req.session.invitationToken,
+          user,
+        }).catch((err) => console.error(err));
+      }
+
+      user.defaultTeamSlug = teamSlugOfInvitedTeam ? teamSlugOfInvitedTeam : user.defaultTeamSlug;
+
       done(null, user);
     } catch (err) {
       done(err);
@@ -42,6 +53,7 @@ function setupGoogle({ server }) {
         clientID: process.env.GOOGLE_CLIENTID,
         clientSecret: process.env.GOOGLE_CLIENTSECRET,
         callbackURL: `${process.env.URL_API}/oauth2callback`,
+        passReqToCallback: true,
       },
       verify,
     ),
@@ -66,9 +78,13 @@ function setupGoogle({ server }) {
       prompt: 'select_account',
     };
 
-    passport.authenticate('google', options)(req, res, next);
+    if (req.query && req.query.invitationToken) {
+      req.session.invitationToken = req.query.invitationToken;
+    } else {
+      req.session.invitationToken = null;
+    }
 
-    console.log('/auth/google');
+    passport.authenticate('google', options)(req, res, next);
   });
 
   server.get(
@@ -76,20 +92,30 @@ function setupGoogle({ server }) {
     passport.authenticate('google', {
       failureRedirect: '/login',
     }),
-    (_, res) => {
-      console.log('/oauth2callback');
-      res.redirect(`${process.env.URL_APP}/your-settings`);
+    async (req, res) => {
+      let teamSlugOfInvitedTeam;
+
+      if (req.user && req.session.invitationToken) {
+        teamSlugOfInvitedTeam = await Invitation.addUserToTeam({
+          token: req.session.invitationToken,
+          user: req.user,
+        }).catch((err) => console.error(err));
+
+        req.session.invitationToken = null;
+      }
+
+      let redirectUrlAfterLogin;
+      const defaultTeamSlug = req.user && req.user.defaultTeamSlug;
+
+      if (teamSlugOfInvitedTeam || defaultTeamSlug) {
+        redirectUrlAfterLogin = `/your-settings`;
+      } else {
+        redirectUrlAfterLogin = `/create-team`;
+      }
+
+      res.redirect(`${process.env.URL_APP}${redirectUrlAfterLogin}`);
     },
   );
-
-  server.get('/logout', (req, res, next) => {
-    req.logout((err) => {
-      if (err) {
-        next(err);
-      }
-      res.redirect(`${process.env.URL_APP}/login`);
-    });
-  });
 }
 
 export { setupGoogle };

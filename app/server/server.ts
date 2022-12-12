@@ -22,6 +22,25 @@ app.prepare().then(() => {
   //   res.json({ user: { email: 'team@builderbook.org' } });
   // });
 
+  server.get('/team/:teamSlug/team-settings', (req, res) => {
+    const { teamSlug } = req.params;
+    app.render(req, res, '/team-settings', { teamSlug });
+  });
+
+  server.get('/team/:teamSlug/discussions/:discussionSlug', (req, res) => {
+    const { teamSlug, discussionSlug } = req.params;
+    app.render(req, res, '/discussion', { teamSlug, discussionSlug });
+  });
+
+  server.get('/team/:teamSlug/discussions', (req, res) => {
+    const { teamSlug } = req.params;
+    app.render(req, res, '/discussion', { teamSlug });
+  });
+
+  server.get('/invitation', (req, res) => {
+    app.render(req, res, '/invitation', { token: req.query.token as string });
+  });
+
   server.all('*', (req, res) => {
     handle(req, res);
   });

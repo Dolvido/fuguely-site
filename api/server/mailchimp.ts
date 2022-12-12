@@ -1,5 +1,4 @@
 import fetch, { Response } from 'node-fetch';
-//import 'isomporhic-unfetch';
 
 // eslint-disable-next-line
 require('dotenv').config();

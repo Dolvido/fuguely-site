@@ -1,7 +1,7 @@
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import { observer } from 'mobx-react';
+import { inject, observer } from 'mobx-react';
 import Head from 'next/head';
 import NProgress from 'nprogress';
 import * as React from 'react';
@@ -46,17 +46,14 @@ class YourSettings extends React.Component<Props, State> {
         <div
           style={{
             padding: this.props.isMobile ? '0px' : '0px 30px',
+            fontSize: '15px',
             height: '100%',
           }}
         >
           <h3>Your Settings</h3>
           <h4 style={{ marginTop: '40px' }}>Your account</h4>
           <div>
-            <i
-              className="material-icons"
-              color="action"
-              style={{ verticalAlign: 'text-bottom' }}
-            >
+            <i className="material-icons" color="action" style={{ verticalAlign: 'text-bottom' }}>
               done
             </i>{' '}
             {currentUser.isSignedupViaGoogle
@@ -67,11 +64,11 @@ class YourSettings extends React.Component<Props, State> {
               Your email: <b>{currentUser.email}</b>
             </li>
             <li>
-              Your name: <b>{currentUser.displayName}</b>
+              Your username: <b>{currentUser.displayName}</b>
             </li>
           </div>
           <form onSubmit={this.onSubmit} autoComplete="off">
-            <h4>Your name</h4>
+            <h4>Your username</h4>
             <TextField
               autoComplete="off"
               value={newName}
@@ -106,7 +103,7 @@ class YourSettings extends React.Component<Props, State> {
           />
           <label htmlFor="upload-file-user-avatar">
             <Button
-              variant="contained"
+              variant="outlined"
               color="primary"
               component="span"
               disabled={this.state.disabled}
@@ -175,7 +172,7 @@ class YourSettings extends React.Component<Props, State> {
     NProgress.start();
     this.setState({ disabled: true });
 
-    const bucket = process.env.BUCKET_FOR_AVATARS;
+    const bucket = process.env.NEXT_PUBLIC_BUCKET_FOR_AVATARS;
 
     const prefix = `${currentUser.slug}`;
 
@@ -218,4 +215,4 @@ class YourSettings extends React.Component<Props, State> {
   };
 }
 
-export default withAuth(observer(YourSettings));
+export default withAuth(inject('store')(observer(YourSettings)));

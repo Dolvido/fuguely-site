@@ -7,18 +7,40 @@ import React from 'react';
 
 import { themeDark, themeLight } from '../lib/theme';
 import { getUserApiMethod } from '../lib/api/public';
+import { getInitialDataApiMethod } from '../lib/api/team-member';
 import { isMobile } from '../lib/isMobile';
 import { getStore, initializeStore, Store } from '../lib/store';
 
-class MyApp extends App<{ isMobile: boolean }> {
+class MyApp extends App {
   public static async getInitialProps({ Component, ctx }) {
     let firstGridItem = true;
+    let teamRequired = false;
 
-    if (ctx.pathname.includes('/login')) {
+    if (
+      ctx.pathname.includes('/login') ||
+      ctx.pathname.includes('/create-team') ||
+      ctx.pathname.includes('/invitation')
+    ) {
       firstGridItem = false;
     }
 
-    const pageProps = { isMobile: isMobile({ req: ctx.req }), firstGridItem };
+    if (
+      ctx.pathname.includes('/team-settings') ||
+      ctx.pathname.includes('/discussion') ||
+      ctx.pathname.includes('/billing')
+    ) {
+      teamRequired = true;
+    }
+
+    const { teamSlug, discussionSlug } = ctx.query;
+
+    const pageProps = {
+      isMobile: isMobile({ req: ctx.req }),
+      firstGridItem,
+      teamRequired,
+      teamSlug,
+      discussionSlug,
+    };
 
     if (Component.getInitialProps) {
       Object.assign(pageProps, await Component.getInitialProps(ctx));
@@ -26,7 +48,8 @@ class MyApp extends App<{ isMobile: boolean }> {
 
     const appProps = { pageProps };
 
-    if (getStore()) {
+    const store = getStore();
+    if (store) {
       return appProps;
     }
 
@@ -38,9 +61,26 @@ class MyApp extends App<{ isMobile: boolean }> {
       console.log(error);
     }
 
+    let initialData = {};
+
+    if (userObj) {
+      try {
+        initialData = await getInitialDataApiMethod({
+          request: ctx.req,
+          data: { teamSlug, discussionSlug },
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    // console.log(initialData);
+
+    // console.log(teamSlug);
+
     return {
       ...appProps,
-      initialState: { user: userObj, currentUrl: ctx.asPath },
+      initialState: { user: userObj, currentUrl: ctx.asPath, teamSlug, ...initialData },
     };
   }
 
@@ -72,6 +112,14 @@ class MyApp extends App<{ isMobile: boolean }> {
       <ThemeProvider theme={isThemeDark ? themeDark : themeLight}>
         <Head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <link
+            rel="stylesheet"
+            href={
+              isThemeDark
+                ? 'https://storage.googleapis.com/async-await/nprogress-light.min.css?v=1'
+                : 'https://storage.googleapis.com/async-await/nprogress-dark.min.css?v=1'
+            }
+          />
         </Head>
         <CssBaseline />
         <Provider store={store}>

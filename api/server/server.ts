@@ -2,11 +2,13 @@ import * as mongoSessionStore from 'connect-mongo';
 import * as cors from 'cors';
 import * as express from 'express';
 import * as session from 'express-session';
+import * as httpModule from 'http';
 import * as mongoose from 'mongoose';
 
 import api from './api';
 import { setupGoogle } from './google-auth';
 import { setupPasswordless } from './passwordless-auth';
+import { setupSockets } from './sockets';
 
 // eslint-disable-next-line
 require('dotenv').config();
@@ -54,11 +56,13 @@ setupPasswordless({ server });
 
 api(server);
 
+const httpServer = httpModule.createServer(server);
+setupSockets({ httpServer, origin: process.env.URL_APP, sessionMiddleware });
+
 server.get('*', (_, res) => {
   res.sendStatus(403);
 });
 
-server.listen(process.env.PORT_API, () => {
-  console.log(`> api server Ready on ${process.env.URL_API}`);
-  console.log(`> api port Ready on ${process.env.PORT_API}`);
+httpServer.listen(process.env.PORT_API, () => {
+  console.log(`> Ready on ${process.env.URL_API}`);
 });

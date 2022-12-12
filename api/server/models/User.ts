@@ -116,7 +116,7 @@ interface UserModel extends mongoose.Model<UserDocument> {
   }: {
     userId: string;
     teamId: string;
-  }): Promise<TeamDocument[]>;
+  }): Promise<TeamDocument>;
 }
 
 // UserClass
@@ -281,10 +281,7 @@ class UserClass extends mongoose.Model {
     return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
   }
 
-  // getMembersByTeam method
-  // userId = user requesting list of team members
-  // teamId = team to get members from
-  public static async getMembersByTeam({ userId, teamId }) {
+  public static async getMembersForTeam({ userId, teamId }) {
     const team = await this.checkPermissionAndGetTeam({ userId, teamId });
 
     return this.find({ _id: { $in: team.memberIds } })
@@ -296,18 +293,16 @@ class UserClass extends mongoose.Model {
   // userId = user requesting list of team members
   // teamId = team to get members from
   private static async checkPermissionAndGetTeam({ userId, teamId }) {
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-    if (!teamId) {
-      throw new Error('Team ID is required');
+    console.log(userId, teamId);
+
+    if (!userId || !teamId) {
+      throw new Error('Bad data');
     }
 
     // search Teams collection by id
     const team = await Team.findById(teamId).select('memberIds').setOptions({ lean: true });
 
-    // if team not found or user is not a member of the team
-    if (!team || team.memberIds.indexOf(userId.toString()) === -1) {
+    if (!team || team.memberIds.indexOf(userId) === -1) {
       throw new Error('Team not found');
     }
 

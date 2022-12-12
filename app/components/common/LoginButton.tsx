@@ -4,10 +4,12 @@ import React from 'react';
 
 import { emailLoginLinkApiMethod } from '../../lib/api/public';
 import notify from '../../lib/notify';
+import { makeQueryString } from '../../lib/api/makeQueryString';
 
+type Props = { invitationToken?: string };
 type State = { email: string };
 
-class LoginButton extends React.PureComponent<any, State> {
+class LoginButton extends React.PureComponent<Props, State> {
   constructor(props) {
     super(props);
 
@@ -15,9 +17,16 @@ class LoginButton extends React.PureComponent<any, State> {
   }
 
   public render() {
-    const url = `${process.env.NEXT_PUBLIC_URL_API}/auth/google`;
+    const { invitationToken } = this.props;
 
-    console.log(url);
+    let url = `${process.env.NEXT_PUBLIC_URL_API}/auth/google`;
+    const qs = makeQueryString({ invitationToken });
+
+    if (qs) {
+      url += `?${qs}`;
+    }
+
+    // console.log(url);
 
     return (
       <React.Fragment>
@@ -60,13 +69,14 @@ class LoginButton extends React.PureComponent<any, State> {
   private onSubmit = async (event) => {
     event.preventDefault();
     const { email } = this.state;
+    const { invitationToken } = this.props;
 
     if (!email) {
       notify('Email is required');
     }
 
     try {
-      await emailLoginLinkApiMethod({ email });
+      await emailLoginLinkApiMethod({ email, invitationToken });
       this.setState({ email: '' });
       notify('SaaS boilerplate emailed you a login link.');
     } catch (error) {

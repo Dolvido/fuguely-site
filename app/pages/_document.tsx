@@ -25,6 +25,10 @@ class MyDocument extends Document {
   public render() {
     // console.log('rendered on the server');
 
+    const isThemeDark = this.props.__NEXT_DATA__.props.initialState.user
+      ? this.props.__NEXT_DATA__.props.initialState.user.darkTheme
+      : true;
+
     return (
       <Html lang="en">
         <Head>
@@ -38,7 +42,15 @@ class MyDocument extends Document {
           />
 
           <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-          <link rel="stylesheet" href="https://storage.googleapis.com/async-await/vs2015.min.css" />
+
+          <link
+            rel="stylesheet"
+            href={
+              isThemeDark
+                ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/a11y-dark.min.css'
+                : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/a11y-light.min.css'
+            }
+          />
 
           <style>
             {`

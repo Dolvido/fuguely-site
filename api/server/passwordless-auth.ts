@@ -4,6 +4,7 @@ import sendEmail from './aws-ses';
 import getEmailTemplate from './models/EmailTemplate';
 import User from './models/User';
 import PasswordlessMongoStore from './passwordless-token-mongostore';
+import Invitation from './models/Invitation';
 
 function setupPasswordless({ server }) {
   const mongoStore = new PasswordlessMongoStore();
@@ -61,7 +62,13 @@ function setupPasswordless({ server }) {
         callback(error, null);
       }
     }),
-    (_, res) => {
+    (req, res) => {
+      if (req.query && req.query.invitationToken) {
+        req.session.invitationToken = req.query.invitationToken;
+      } else {
+        req.session.invitationToken = null;
+      }
+
       res.json({ done: 1 });
     },
   );
@@ -79,8 +86,28 @@ function setupPasswordless({ server }) {
         next();
       }
     },
-    (_, res) => {
-      res.redirect(`${process.env.URL_APP}/your-settings`);
+    async (req, res) => {
+      let teamSlugOfInvitedTeam;
+
+      if (req.user && req.session.invitationToken) {
+        teamSlugOfInvitedTeam = await Invitation.addUserToTeam({
+          token: req.session.invitationToken,
+          user: req.user,
+        }).catch((err) => console.error(err));
+
+        req.session.invitationToken = null;
+      }
+
+      let redirectUrlAfterLogin;
+      const defaultTeamSlug = req.user && req.user.defaultTeamSlug;
+
+      if (teamSlugOfInvitedTeam || defaultTeamSlug) {
+        redirectUrlAfterLogin = `/your-settings`;
+      } else {
+        redirectUrlAfterLogin = `/create-team`;
+      }
+
+      res.redirect(`${process.env.URL_APP}${redirectUrlAfterLogin}`);
     },
   );
 
@@ -89,7 +116,12 @@ function setupPasswordless({ server }) {
       if (err) {
         next(err);
       }
-      res.redirect(`${process.env.URL_APP}/login`);
+
+      if (req.query && req.query.invitationToken) {
+        res.redirect(`${process.env.URL_APP}/invitation?token=${req.query.invitationToken}`);
+      } else {
+        res.redirect(`${process.env.URL_APP}/login`);
+      }
     });
   });
 }
