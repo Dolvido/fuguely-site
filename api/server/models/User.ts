@@ -6,6 +6,8 @@ import { addToMailchimp } from '../mailchimp';
 import { generateSlug } from '../utils/slugify';
 import getEmailTemplate from './EmailTemplate';
 
+import Team, { TeamDocument } from './Team';
+
 const mongoSchema = new mongoose.Schema({
   slug: {
     type: String,
@@ -38,8 +40,13 @@ const mongoSchema = new mongoose.Schema({
     default: false,
   },
   darkTheme: Boolean,
+  defaultTeamSlug: {
+    type: String,
+    default: '',
+  },
 });
 
+// mongoose UserDocument interface
 export interface UserDocument extends mongoose.Document {
   slug: string;
   createdAt: Date;
@@ -50,6 +57,7 @@ export interface UserDocument extends mongoose.Document {
   googleToken: { accessToken: string; refreshToken: string };
   isSignedupViaGoogle: boolean;
   darkTheme: boolean;
+  defaultTeamSlug: string;
 }
 
 interface UserModel extends mongoose.Model<UserDocument> {
@@ -91,8 +99,27 @@ interface UserModel extends mongoose.Model<UserDocument> {
 
   // define types for toggle theme method
   toggleTheme({ userId, darkTheme }: { userId: string; darkTheme: boolean }): Promise<void>;
+
+  // type definition for getMembersForTeam method
+  getMembersForTeam({
+    userId,
+    teamId,
+  }: {
+    userId: string;
+    teamId: string;
+  }): Promise<UserDocument[]>;
+
+  // type definition for checkPermissionAndGetTeam method
+  checkPermissionAndGetTeam({
+    userId,
+    teamId,
+  }: {
+    userId: string;
+    teamId: string;
+  }): Promise<TeamDocument>;
 }
 
+// UserClass
 class UserClass extends mongoose.Model {
   public static async getUserBySlug({ slug }) {
     console.log('Static method: getUserBySlug');
@@ -129,6 +156,7 @@ class UserClass extends mongoose.Model {
       'slug',
       'isSignedupViaGoogle',
       'darkTheme',
+      'defaultTeamSlug',
     ];
   }
 
@@ -173,6 +201,7 @@ class UserClass extends mongoose.Model {
       avatarUrl,
       slug,
       isSignedupViaGoogle: true,
+      defaultTeamSlug: '',
       darkTheme: false,
     });
 
@@ -218,6 +247,7 @@ class UserClass extends mongoose.Model {
       createdAt: new Date(),
       email,
       slug,
+      defaultTeamSlug: '',
     });
 
     const emailTemplate = await getEmailTemplate('welcome', { userName: email });
@@ -237,19 +267,51 @@ class UserClass extends mongoose.Model {
       console.error('Email sending error:', err);
     }
 
-     try {
+    try {
       await addToMailchimp({ email, listName: 'signups' });
     } catch (error) {
       console.error('Mailchimp error:', error);
-    } 
+    }
 
     return _.pick(newUser, this.publicFields());
   }
 
-
   // define static toggle theme method
   public static toggleTheme({ userId, darkTheme }) {
     return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
+  }
+
+  // getMembersByTeam method
+  // userId = user requesting list of team members
+  // teamId = team to get members from
+  public static async getMembersByTeam({ userId, teamId }) {
+    const team = await this.checkPermissionAndGetTeam({ userId, teamId });
+
+    return this.find({ _id: { $in: team.memberIds } })
+      .select(this.publicFields().join(' '))
+      .setOptions({ lean: true });
+  }
+
+  // checkPermissionAndGetTeam static method
+  // userId = user requesting list of team members
+  // teamId = team to get members from
+  private static async checkPermissionAndGetTeam({ userId, teamId }) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    if (!teamId) {
+      throw new Error('Team ID is required');
+    }
+
+    // search Teams collection by id
+    const team = await Team.findById(teamId).select('memberIds').setOptions({ lean: true });
+
+    // if team not found or user is not a member of the team
+    if (!team || team.memberIds.indexOf(userId.toString()) === -1) {
+      throw new Error('Team not found');
+    }
+
+    return team;
   }
 }
 
