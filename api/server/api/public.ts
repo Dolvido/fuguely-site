@@ -26,19 +26,13 @@ router.post('/get-user-by-slug', async (req, res, next) => {
   }
 });
 
-router.post('/user/update-profile', async (req: any, res, next) => {
-  console.log('Express route: /user/update-profile');
+router.get('/invitations/get-team-by-token', async (req, res, next) => {
+  const token = req.query.token as string;
 
   try {
-    const { name, avatarUrl } = req.body;
+    const team = await Invitation.getTeamByToken({ token });
 
-    const updatedUser = await User.updateProfile({
-      userId: req.user.id,
-      name,
-      avatarUrl,
-    });
-
-    res.json({ updatedUser });
+    res.json({ team });
   } catch (err) {
     next(err);
   }
