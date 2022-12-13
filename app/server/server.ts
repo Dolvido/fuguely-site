@@ -37,6 +37,11 @@ app.prepare().then(() => {
     app.render(req, res, '/discussion', { teamSlug });
   });
 
+  server.get('/team/:teamSlug/billing', (req, res) => {
+    const { teamSlug } = req.params;
+    app.render(req, res, '/billing', { teamSlug, ...(req.query || {}) });
+  });
+
   server.get('/invitation', (req, res) => {
     app.render(req, res, '/invitation', { token: req.query.token as string });
   });

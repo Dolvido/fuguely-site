@@ -32,6 +32,12 @@ const mongoSchema = new mongoose.Schema({
     required: true,
     default: Date.now,
   },
+  notificationType: {
+    type: String,
+    enum: ['default', 'email'],
+    required: true,
+    default: 'default',
+  },
 });
 
 export interface DiscussionDocument extends mongoose.Document {
@@ -41,6 +47,7 @@ export interface DiscussionDocument extends mongoose.Document {
   slug: string;
   memberIds: string[];
   createdAt: Date;
+  notificationType: string;
 }
 
 interface DiscussionModel extends mongoose.Model<DiscussionDocument> {
@@ -57,11 +64,13 @@ interface DiscussionModel extends mongoose.Model<DiscussionDocument> {
     userId,
     teamId,
     memberIds,
+    notificationType,
   }: {
     name: string;
     userId: string;
     teamId: string;
     memberIds: string[];
+    notificationType: string;
   }): Promise<DiscussionDocument>;
 
   edit({
@@ -69,11 +78,13 @@ interface DiscussionModel extends mongoose.Model<DiscussionDocument> {
     id,
     name,
     memberIds,
+    notificationType,
   }: {
     userId: string;
     id: string;
     name: string;
     memberIds: string[];
+    notificationType: string;
   }): Promise<DiscussionDocument>;
 
   delete({ userId, id }: { userId: string; id: string }): Promise<{ teamId: string }>;
@@ -100,7 +111,7 @@ class DiscussionClass extends mongoose.Model {
     return { discussions };
   }
 
-  public static async add({ name, userId, teamId, memberIds = [] }) {
+  public static async add({ name, userId, teamId, memberIds = [], notificationType }) {
     if (!name) {
       throw new Error('Bad data');
     }
@@ -116,10 +127,11 @@ class DiscussionClass extends mongoose.Model {
       slug,
       memberIds: uniq([userId, ...memberIds]),
       createdAt: new Date(),
+      notificationType,
     });
   }
 
-  public static async edit({ userId, id, name, memberIds = [] }) {
+  public static async edit({ userId, id, name, memberIds = [], notificationType }) {
     if (!id) {
       throw new Error('Bad data');
     }
@@ -143,6 +155,7 @@ class DiscussionClass extends mongoose.Model {
       {
         name,
         memberIds: uniq([userId, ...memberIds]),
+        notificationType,
       },
       { runValidators: true, new: true },
     );

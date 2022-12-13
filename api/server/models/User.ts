@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as mongoose from 'mongoose';
+import Stripe from 'stripe';
 
 import sendEmail from '../aws-ses';
 import { addToMailchimp } from '../mailchimp';
@@ -7,6 +8,8 @@ import { generateSlug } from '../utils/slugify';
 import getEmailTemplate from './EmailTemplate';
 
 import Team, { TeamDocument } from './Team';
+
+import { getListOfInvoices } from '../stripe';
 
 const mongoSchema = new mongoose.Schema({
   slug: {
@@ -44,6 +47,48 @@ const mongoSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  stripeCustomer: {
+    id: String,
+    object: String,
+    created: Number,
+    currency: String,
+    default_source: String,
+    description: String,
+  },
+  stripeCard: {
+    id: String,
+    object: String,
+    brand: String,
+    funding: String,
+    country: String,
+    last4: String,
+    exp_month: Number,
+    exp_year: Number,
+  },
+  hasCardInformation: {
+    type: Boolean,
+    default: false,
+  },
+  stripeListOfInvoices: {
+    object: String,
+    has_more: Boolean,
+    data: [
+      {
+        id: String,
+        object: String,
+        amount_paid: Number,
+        created: Number,
+        customer: String,
+        subscription: String,
+        hosted_invoice_url: String,
+        billing: String,
+        paid: Boolean,
+        number: String,
+        teamId: String,
+        teamName: String,
+      },
+    ],
+  },
 });
 
 // mongoose UserDocument interface
@@ -58,6 +103,44 @@ export interface UserDocument extends mongoose.Document {
   isSignedupViaGoogle: boolean;
   darkTheme: boolean;
   defaultTeamSlug: string;
+  stripeCustomer: {
+    id: string;
+    default_source: string;
+    created: number;
+    object: string;
+    description: string;
+  };
+  stripeCard: {
+    id: string;
+    object: string;
+    brand: string;
+    country: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+    funding: string;
+  };
+  hasCardInformation: boolean;
+  stripeListOfInvoices: {
+    object: string;
+    has_more: boolean;
+    data: [
+      {
+        id: string;
+        object: string;
+        amount_paid: number;
+        date: number;
+        customer: string;
+        subscription: string;
+        hosted_invoice_url: string;
+        billing: string;
+        paid: boolean;
+        number: string;
+        teamId: string;
+        teamName: string;
+      },
+    ];
+  };
 }
 
 interface UserModel extends mongoose.Model<UserDocument> {
@@ -117,6 +200,24 @@ interface UserModel extends mongoose.Model<UserDocument> {
     userId: string;
     teamId: string;
   }): Promise<TeamDocument>;
+
+  saveStripeCustomerAndCard({
+    user,
+    session,
+  }: {
+    session: Stripe.Checkout.Session;
+    user: UserDocument;
+  }): Promise<void>;
+
+  changeStripeCard({
+    session,
+    user,
+  }: {
+    session: Stripe.Checkout.Session;
+    user: UserDocument;
+  }): Promise<void>;
+
+  getListOfInvoicesForCustomer({ userId }: { userId: string }): Promise<UserDocument>;
 }
 
 // UserClass
@@ -157,6 +258,9 @@ class UserClass extends mongoose.Model {
       'isSignedupViaGoogle',
       'darkTheme',
       'defaultTeamSlug',
+      'stripeCard',
+      'hasCardInformation',
+      'stripeListOfInvoices',
     ];
   }
 
@@ -289,9 +393,80 @@ class UserClass extends mongoose.Model {
       .setOptions({ lean: true });
   }
 
-  // checkPermissionAndGetTeam static method
-  // userId = user requesting list of team members
-  // teamId = team to get members from
+  public static async saveStripeCustomerAndCard({
+    user,
+    session,
+  }: {
+    session: Stripe.Checkout.Session;
+    user: UserDocument;
+  }) {
+    if (!user) {
+      throw new Error('User not found.');
+    }
+
+    const stripeSubscription = session.subscription as Stripe.Subscription;
+
+    const stripeCard =
+      (stripeSubscription.default_payment_method &&
+        (stripeSubscription.default_payment_method as Stripe.PaymentMethod).card) ||
+      undefined;
+
+    const hasCardInformation = !!stripeCard;
+
+    await this.updateOne(
+      { _id: user._id },
+      {
+        stripeCustomer: session.customer,
+        stripeCard,
+        hasCardInformation,
+      },
+    );
+  }
+
+  public static async changeStripeCard({
+    session,
+    user,
+  }: {
+    session: Stripe.Checkout.Session;
+    user: UserDocument;
+  }): Promise<void> {
+    if (!user) {
+      throw new Error('User not found.');
+    }
+
+    const si: Stripe.SetupIntent = session.setup_intent as Stripe.SetupIntent;
+    const pm: Stripe.PaymentMethod = si.payment_method as Stripe.PaymentMethod;
+
+    if (!pm.card) {
+      throw new Error('No card found.');
+    }
+    await this.updateOne({ _id: user._id }, { stripeCard: pm.card, hasCardInformation: true });
+  }
+
+  public static async getListOfInvoicesForCustomer({ userId }) {
+    const user = await this.findById(userId, 'stripeCustomer');
+
+    if (!user.stripeCustomer.id) {
+      throw new Error('You are not a customer and you have no payment history.');
+    }
+
+    const newListOfInvoices = await getListOfInvoices({
+      customerId: user.stripeCustomer.id,
+    });
+
+    if (newListOfInvoices.data === undefined || newListOfInvoices.data.length === 0) {
+      throw new Error('You are a customer. But there is no payment history.');
+    }
+
+    const modifier = {
+      stripeListOfInvoices: newListOfInvoices,
+    };
+
+    return this.findByIdAndUpdate(userId, { $set: modifier }, { new: true, runValidators: true })
+      .select('stripeListOfInvoices')
+      .setOptions({ lean: true });
+  }
+
   private static async checkPermissionAndGetTeam({ userId, teamId }) {
     console.log(userId, teamId);
 
