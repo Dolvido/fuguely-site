@@ -1,4 +1,4 @@
-import Paper from '@material-ui/core/Paper';
+import Paper from '@mui/material/Paper';
 import { observer } from 'mobx-react';
 import Link from 'next/link';
 import React from 'react';
@@ -22,9 +22,9 @@ class DiscussionListItem extends React.Component<Props> {
     const trimmingLength = 16;
 
     const selectedDiscussion =
-      store.currentUrl === `/team/${team.slug}/discussions/${discussion.slug}`;
+      store.currentUrl === `/teams/${team.slug}/discussions/${discussion.slug}`;
 
-    console.log(store.currentUrl);
+    // console.log(store.currentUrl);
 
     const isThemeDark = store && store.currentUser && store.currentUser.darkTheme === true;
 
@@ -46,7 +46,7 @@ class DiscussionListItem extends React.Component<Props> {
           <Link
             scroll={false}
             href={`/discussion?teamSlug=${team.slug}&discussionSlug=${discussion.slug}`}
-            as={`/team/${team.slug}/discussions/${discussion.slug}`}
+            as={`/teams/${team.slug}/discussions/${discussion.slug}`}
           >
             <a
               style={{ fontWeight: 300, color: isThemeDark ? '#fff' : '#000' }}

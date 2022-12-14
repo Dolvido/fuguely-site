@@ -1,18 +1,18 @@
-import * as mobx from 'mobx';
-import { action, decorate, IObservableArray, observable } from 'mobx';
-import { useStaticRendering } from 'mobx-react';
-// @ts-expect-error no exported member io socket.io-client
-import { io } from 'socket.io-client';
+import { action, configure, IObservableArray, observable, makeObservable } from 'mobx';
+import { enableStaticRendering } from 'mobx-react';
+import { io, Socket } from 'socket.io-client';
 
 import { addTeamApiMethod, getTeamInvitationsApiMethod } from '../api/team-leader';
-import { getTeamListApiMethod, getTeamMembersApiMethod } from '../api/team-member';
+import { getTeamMembersApiMethod } from '../api/team-member';
 
 import { User } from './user';
 import { Team } from './team';
 
-useStaticRendering(typeof window === 'undefined');
+const dev = process.env.NODE_ENV !== 'production';
 
-mobx.configure({ enforceActions: 'observed' });
+enableStaticRendering(typeof window === 'undefined');
+
+configure({ enforceActions: 'observed' });
 
 class Store {
   public isServer: boolean;
@@ -20,11 +20,11 @@ class Store {
   public currentUser?: User = null;
   public currentUrl = '';
 
-  public currentTeam?: Team;
+  public currentTeam?: Team = null;
 
   public teams: IObservableArray<Team> = observable([]);
 
-  public socket: SocketIOClient.Socket;
+  public socket: Socket;
 
   constructor({
     initialState = {},
@@ -33,22 +33,29 @@ class Store {
   }: {
     initialState?: any;
     isServer: boolean;
-    socket?: SocketIOClient.Socket;
+    socket?: Socket;
   }) {
+    makeObservable(this, {
+      currentUser: observable,
+      currentUrl: observable,
+      currentTeam: observable,
+
+      changeCurrentUrl: action,
+      setCurrentUser: action,
+      setCurrentTeam: action,
+    });
+
     this.isServer = !!isServer;
+
+    // console.log('initialState.user', initialState.user);
 
     this.setCurrentUser(initialState.user);
 
     this.currentUrl = initialState.currentUrl || '';
 
-    // console.log(initialState.user);
+    // console.log(initialState);
 
-    if (initialState.teamSlug || (initialState.user && initialState.user.defaultTeamSlug)) {
-      this.setCurrentTeam(
-        initialState.teamSlug || initialState.user.defaultTeamSlug,
-        initialState.teams,
-      );
-    }
+    this.setCurrentTeam(initialState.team);
 
     if (initialState.teams && initialState.teams.length > 0) {
       this.setInitialTeamsStoreMethod(initialState.teams);
@@ -74,7 +81,6 @@ class Store {
   public async setCurrentUser(user) {
     if (user) {
       this.currentUser = new User({ store: this, ...user });
-
     } else {
       this.currentUser = null;
     }
@@ -87,36 +93,25 @@ class Store {
     return team;
   }
 
-  public async setCurrentTeam(slug: string, initialTeams: any[]) {
+  public async setCurrentTeam(team) {
     if (this.currentTeam) {
-      if (this.currentTeam.slug === slug) {
+      if (this.currentTeam.slug === team.slug) {
         return;
       }
     }
 
-    let found = false;
+    if (team) {
+      this.currentTeam = new Team({ ...team, store: this });
 
-    const teams = initialTeams || (await getTeamListApiMethod()).teams;
+      const users =
+        team.initialMembers || (await getTeamMembersApiMethod(this.currentTeam._id)).users;
 
-    for (const team of teams) {
-      if (team.slug === slug) {
-        found = true;
-        this.currentTeam = new Team({ ...team, store: this });
+      const invitations =
+        team.initialInvitations ||
+        (await getTeamInvitationsApiMethod(this.currentTeam._id)).invitations;
 
-        const users =
-          team.initialMembers || (await getTeamMembersApiMethod(this.currentTeam._id)).users;
-
-        const invitations =
-          team.initialInvitations ||
-          (await getTeamInvitationsApiMethod(this.currentTeam._id)).invitations;
-
-        this.currentTeam.setInitialMembersAndInvitations(users, invitations);
-
-        break;
-      }
-    }
-
-    if (!found) {
+      this.currentTeam.setInitialMembersAndInvitations(users, invitations);
+    } else {
       this.currentTeam = null;
     }
   }
@@ -130,16 +125,6 @@ class Store {
   }
 }
 
-decorate(Store, {
-  currentUser: observable,
-  currentUrl: observable,
-  currentTeam: observable,
-
-  changeCurrentUrl: action,
-  setCurrentUser: action,
-  setCurrentTeam: action,
-});
-
 let store: Store = null;
 
 function initializeStore(initialState = {}) {
@@ -147,7 +132,7 @@ function initializeStore(initialState = {}) {
 
   const socket = isServer
     ? null
-    : io(process.env.NEXT_PUBLIC_URL_API, {
+    : io(dev ? process.env.NEXT_PUBLIC_URL_API : process.env.NEXT_PUBLIC_PRODUCTION_URL_API, {
         reconnection: true,
         autoConnect: true,
         transports: ['polling', 'websocket'],

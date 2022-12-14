@@ -1,4 +1,4 @@
-import { action, computed, decorate, IObservableArray, observable, runInAction } from 'mobx';
+import { action, computed, IObservableArray, observable, runInAction, makeObservable } from 'mobx';
 import Router from 'next/router';
 import {
   cancelSubscriptionApiMethod,
@@ -16,7 +16,6 @@ import { User } from './user';
 import { Invitation } from './invitation';
 import { Discussion } from './discussion';
 
-// define class Team for data store
 class Team {
   public store: Store;
 
@@ -27,7 +26,6 @@ class Team {
   public slug: string;
   public avatarUrl: string;
   public memberIds: IObservableArray<string> = observable([]);
-
   public members: Map<string, User> = new Map();
   public invitations: Map<string, Invitation> = new Map();
 
@@ -50,6 +48,33 @@ class Team {
   public isPaymentFailed: boolean;
 
   constructor(params) {
+    makeObservable(this, {
+      name: observable,
+      slug: observable,
+      avatarUrl: observable,
+      memberIds: observable,
+      members: observable,
+      invitations: observable,
+      currentDiscussion: observable,
+      currentDiscussionSlug: observable,
+      isLoadingDiscussions: observable,
+      discussions: observable,
+
+      setInitialMembersAndInvitations: action,
+      updateTheme: action,
+      inviteMember: action,
+      removeMember: action,
+      setInitialDiscussions: action,
+      loadDiscussions: action,
+      addDiscussion: action,
+      addDiscussionToLocalCache: action,
+      deleteDiscussion: action,
+      deleteDiscussionFromLocalCache: action,
+      getDiscussionBySlug: action,
+
+      orderedDiscussions: computed,
+    });
+
     this._id = params._id;
     this.teamLeaderId = params.teamLeaderId;
     this.slug = params.slug;
@@ -86,6 +111,8 @@ class Team {
     for (const invitation of invitations) {
       this.invitations.set(invitation._id, new Invitation(invitation));
     }
+
+    // console.log(this.members);
   }
 
   public async updateTheme({ name, avatarUrl }: { name: string; avatarUrl: string }) {
@@ -243,10 +270,10 @@ class Team {
 
           Router.push(
             `/discussion?teamSlug=${this.slug}&discussionSlug=${d.slug}`,
-            `/team/${this.slug}/discussions/${d.slug}`,
+            `/teams/${this.slug}/discussions/${d.slug}`,
           );
         } else {
-          Router.push(`/discussion?teamSlug=${this.slug}`, `/team/${this.slug}/discussions`);
+          Router.push(`/discussion?teamSlug=${this.slug}`, `/teams/${this.slug}/discussions`);
         }
       }
     });
@@ -292,32 +319,5 @@ class Team {
     return this.discussions.slice().sort();
   }
 }
-
-decorate(Team, {
-  name: observable,
-  slug: observable,
-  avatarUrl: observable,
-  memberIds: observable,
-  members: observable,
-  invitations: observable,
-  currentDiscussion: observable,
-  currentDiscussionSlug: observable,
-  isLoadingDiscussions: observable,
-  discussions: observable,
-
-  setInitialMembersAndInvitations: action,
-  updateTheme: action,
-  inviteMember: action,
-  removeMember: action,
-  setInitialDiscussions: action,
-  loadDiscussions: action,
-  addDiscussion: action,
-  addDiscussionToLocalCache: action,
-  deleteDiscussion: action,
-  deleteDiscussionFromLocalCache: action,
-  getDiscussionBySlug: action,
-
-  orderedDiscussions: computed,
-});
 
 export { Team };

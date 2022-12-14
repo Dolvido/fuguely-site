@@ -1,10 +1,13 @@
-/* eslint-disable @typescript-eslint/camelcase */
-
-import * as bodyParser from 'body-parser';
+import * as dotenv from 'dotenv';
+import * as express from 'express';
 import Stripe from 'stripe';
 
 import Team from './models/Team';
 import User from './models/User';
+
+import logger from './logger';
+
+dotenv.config();
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -13,17 +16,39 @@ const stripeInstance = new Stripe(
   { apiVersion: '2020-08-27' },
 );
 
-function createSession({ userId, teamId, teamSlug, customerId, subscriptionId, userEmail, mode }) {
+function createSession({
+  userId,
+  teamId,
+  teamSlug,
+  customerId,
+  subscriptionId,
+  userEmail,
+  mode,
+}: {
+  userId: string;
+  teamId: string;
+  teamSlug: string;
+  customerId: string;
+  subscriptionId: string;
+  userEmail: string;
+  mode: Stripe.Checkout.SessionCreateParams.Mode;
+}) {
   const params: Stripe.Checkout.SessionCreateParams = {
     customer_email: customerId ? undefined : userEmail,
     customer: customerId,
     payment_method_types: ['card'],
     mode,
-    success_url: `${process.env.URL_API}/stripe/checkout-completed/{CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.URL_APP}/team/${teamSlug}/billing?redirectMessage=Checkout%20canceled`,
+    success_url: `${
+      dev ? process.env.URL_API : process.env.PRODUCTION_URL_API
+    }/stripe/checkout-completed/{CHECKOUT_SESSION_ID}`,
+    cancel_url: `${
+      dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP
+    }/teams/${teamSlug}/billing?redirectMessage=Checkout%20canceled`,
     metadata: { userId, teamId },
   };
-  console.log('creating Stripe session');
+
+  console.log(process.env.STRIPE_TEST_SECRETKEY, process.env.STRIPE_TEST_PRICEID);
+
   if (mode === 'subscription') {
     params.line_items = [
       {
@@ -57,29 +82,29 @@ function retrieveSession({ sessionId }: { sessionId: string }) {
 }
 
 function updateCustomer(customerId, params: Stripe.CustomerUpdateParams) {
-  console.log('updating customer', customerId);
+  logger.debug('updating customer', customerId);
   return stripeInstance.customers.update(customerId, params);
 }
 
 function updateSubscription(subscriptionId: string, params: Stripe.SubscriptionUpdateParams) {
-  console.log('updating subscription', subscriptionId);
+  logger.debug('updating subscription', subscriptionId);
   return stripeInstance.subscriptions.update(subscriptionId, params);
 }
 
-function cancelSubscription({ subscriptionId }) {
-  console.log('cancel subscription', subscriptionId);
+function cancelSubscription({ subscriptionId }: { subscriptionId: string }) {
+  logger.debug('cancel subscription', subscriptionId);
   return stripeInstance.subscriptions.del(subscriptionId);
 }
 
-function getListOfInvoices({ customerId }) {
-  console.log('getting list of invoices for customer', customerId);
+function getListOfInvoices({ customerId }: { customerId: string }) {
+  logger.debug('getting list of invoices for customer', customerId);
   return stripeInstance.invoices.list({ customer: customerId, limit: 100 });
 }
 
-function stripeWebhookAndCheckoutCallback({ server }) {
+function stripeWebhookAndCheckoutCallback({ server }: { server: express.Application }) {
   server.post(
     '/api/v1/public/stripe-invoice-payment-failed',
-    bodyParser.raw({ type: 'application/json' }),
+    express.raw({ type: 'application/json' }),
     async (req, res, next) => {
       try {
         const event = stripeInstance.webhooks.constructEvent(
@@ -88,7 +113,7 @@ function stripeWebhookAndCheckoutCallback({ server }) {
           dev ? process.env.STRIPE_TEST_ENDPOINTSECRET : process.env.STRIPE_LIVE_ENDPOINTSECRET,
         );
 
-        console.log(`${event.id}, ${event.type}`);
+        logger.debug(`${event.id}, ${event.type}`);
 
         // invoice.payment_failed
         // data.object is an invoice
@@ -97,7 +122,7 @@ function stripeWebhookAndCheckoutCallback({ server }) {
         if (event.type === 'invoice.payment_failed') {
           // @ts-expect-error subscription does not exist on type Object
           const { subscription } = event.data.object;
-          console.log(JSON.stringify(subscription));
+          logger.debug(JSON.stringify(subscription));
 
           await Team.cancelSubscriptionAfterFailedPayment({
             subscriptionId: JSON.stringify(subscription),
@@ -166,14 +191,16 @@ function stripeWebhookAndCheckoutCallback({ server }) {
         throw new Error('Wrong session.');
       }
 
-      res.redirect(`${process.env.URL_APP}/team/${team.slug}/billing`);
+      res.redirect(
+        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/teams/${team.slug}/billing`,
+      );
     } catch (err) {
       console.error(err);
 
       res.redirect(
-        `${process.env.URL_APP}/team/${team.slug}/billing?redirectMessage=${
-          err.message || err.toString()
-        }`,
+        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/teams/${
+          team.slug
+        }/billing?redirectMessage=${err.message || err.toString()}`,
       );
     }
   });

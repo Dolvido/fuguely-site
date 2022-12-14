@@ -6,7 +6,6 @@ const styleBigAvatar = {
 
 const styleRaisedButton = {
   margin: '15px',
-  font: '14px Roboto',
 };
 
 const styleToolbar = {
@@ -16,7 +15,6 @@ const styleToolbar = {
 };
 
 const styleTextField = {
-  font: '15px Roboto',
   color: '#222',
   fontWeight: '300',
 };

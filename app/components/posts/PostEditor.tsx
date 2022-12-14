@@ -1,5 +1,6 @@
-import Avatar from '@material-ui/core/Avatar';
-import Button from '@material-ui/core/Button';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 import he from 'he';
 import { marked } from 'marked';
 import { observer } from 'mobx-react';
@@ -87,10 +88,8 @@ class PostEditor extends React.Component<Props, State> {
 
         <div style={{ display: 'inline', float: 'left' }}>
           <label htmlFor={'upload-file-post-editor-' + parentComponent}>
-            <Button component="span">
-              <i className="material-icons" style={{ fontSize: '22px', color: '#58a6ff' }}>
-                insert_photo
-              </i>
+            <Button component="span" style={{ color: '#58a6ff' }}>
+              <InsertPhotoIcon style={{ fontSize: '22px' }} />
             </Button>
           </label>
           <input
@@ -109,8 +108,6 @@ class PostEditor extends React.Component<Props, State> {
         <br />
         <div
           style={{
-            width: '100%',
-            height: '100vh',
             padding: '10px 15px',
             border: isThemeDark
               ? '1px solid rgba(255, 255, 255, 0.5)'
@@ -126,10 +123,16 @@ class PostEditor extends React.Component<Props, State> {
                   border: 'none',
                   outline: 'none',
                   color: isThemeDark ? '#fff' : '#000',
-                  fontWeight: 300,
-                  height: '100vh',
+                  fontFamily: 'Roboto, sans-serif',
                   lineHeight: '1.5em',
                   backgroundColor: content ? textareaBackgroundColor : 'transparent',
+                },
+
+                '&multiLine': {
+                  control: {
+                    fontFamily: 'Roboto, sans-serif',
+                    minHeight: 100,
+                  },
                 },
                 suggestions: {
                   list: {
@@ -269,7 +272,7 @@ class PostEditor extends React.Component<Props, State> {
 
         fileUrl = responseFromApiServerForUpload.url;
 
-        console.log(fileUrl);
+        // console.log(fileUrl);
 
         const finalWidth = width > 768 ? '100%' : `${width}px`;
 

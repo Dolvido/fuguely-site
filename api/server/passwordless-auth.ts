@@ -9,11 +9,13 @@ import Invitation from './models/Invitation';
 function setupPasswordless({ server }) {
   const mongoStore = new PasswordlessMongoStore();
 
+  const dev = process.env.NODE_ENV !== 'production';
+
   passwordless.addDelivery(async (tokenToSend, uidToSend, recipient, callback) => {
     try {
       const template = await getEmailTemplate('login', {
         loginURL: `${
-          process.env.URL_API
+          dev ? process.env.URL_API : process.env.PRODUCTION_URL_API
         }/auth/logged_in?token=${tokenToSend}&uid=${encodeURIComponent(uidToSend)}`,
       });
 
@@ -107,7 +109,9 @@ function setupPasswordless({ server }) {
         redirectUrlAfterLogin = `/create-team`;
       }
 
-      res.redirect(`${process.env.URL_APP}${redirectUrlAfterLogin}`);
+      res.redirect(
+        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}${redirectUrlAfterLogin}`,
+      );
     },
   );
 
@@ -118,9 +122,13 @@ function setupPasswordless({ server }) {
       }
 
       if (req.query && req.query.invitationToken) {
-        res.redirect(`${process.env.URL_APP}/invitation?token=${req.query.invitationToken}`);
+        res.redirect(
+          `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/invitation?token=${
+            req.query.invitationToken
+          }`,
+        );
       } else {
-        res.redirect(`${process.env.URL_APP}/login`);
+        res.redirect(`${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/login`);
       }
     });
   });

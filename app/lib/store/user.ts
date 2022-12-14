@@ -1,4 +1,4 @@
-import { action, decorate, observable, runInAction } from 'mobx';
+import { action, observable, runInAction, makeObservable } from 'mobx';
 
 import * as NProgress from 'nprogress';
 
@@ -41,6 +41,21 @@ class User {
   };
 
   constructor(params) {
+    makeObservable(this, {
+      slug: observable,
+      email: observable,
+      displayName: observable,
+      avatarUrl: observable,
+      // darkTheme: observable,
+      defaultTeamSlug: observable,
+      stripeCard: observable,
+      stripeListOfInvoices: observable,
+
+      updateProfile: action,
+      toggleTheme: action,
+      getListOfInvoices: action,
+    });
+
     this.store = params.store;
     this._id = params._id;
     this.slug = params.slug;
@@ -69,14 +84,11 @@ class User {
     });
   }
 
-  // add store method for toggling theme
   public async toggleTheme(darkTheme: boolean) {
     await toggleThemeApiMethod({ darkTheme });
     runInAction(() => {
       this.darkTheme = darkTheme;
     });
-    // mobx and mobx-react do not reactively re-render ThemeProvider from Material-UI when the value for theme changes
-    // so we need to reload the page to get the new theme
     NProgress.start();
     NProgress.set(0.5);
     window.location.reload();
@@ -94,20 +106,5 @@ class User {
     }
   }
 }
-
-decorate(User, {
-  slug: observable,
-  email: observable,
-  displayName: observable,
-  avatarUrl: observable,
-  // darkTheme: observable,
-  defaultTeamSlug: observable,
-  stripeCard: observable,
-  stripeListOfInvoices: observable,
-
-  updateProfile: action,
-  toggleTheme: action,
-  getListOfInvoices: action,
-});
 
 export { User };

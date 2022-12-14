@@ -1,6 +1,8 @@
-import Avatar from '@material-ui/core/Avatar';
-import Button from '@material-ui/core/Button';
-import Grid from '@material-ui/core/Grid';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import Grid from '@mui/material/Grid';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import LensIcon from '@mui/icons-material/Lens';
 
 import Link from 'next/link';
 import React from 'react';
@@ -11,6 +13,8 @@ import Notifier from '../common/Notifier';
 
 import { Store } from '../../lib/store';
 import DiscussionList from '../discussions/DiscussionList';
+
+const dev = process.env.NODE_ENV !== 'production';
 
 const styleGrid = {
   width: '100%',
@@ -48,7 +52,7 @@ function LayoutWrapper({
       <Grid
         container
         direction="row"
-        justify="flex-start"
+        justifyContent="flex-start"
         alignItems="stretch"
         style={isMobile ? styleGridIsMobile : styleGrid}
       >
@@ -96,29 +100,38 @@ function LayoutWrapper({
               <MenuWithLinks
                 options={[
                   {
+                    text: 'Your Settings',
+                    href: `/your-settings?teamSlug=${store.currentTeam.slug}`,
+                    as: `/teams/${store.currentTeam.slug}/your-settings`,
+                    highlighterSlug: '/your-settings',
+                  },
+                  {
                     text: 'Team Settings',
                     href: `/team-settings?teamSlug=${store.currentTeam.slug}`,
-                    as: `/team/${store.currentTeam.slug}/team-settings`,
-                    simple: true,
+                    as: `/teams/${store.currentTeam.slug}/team-settings`,
+                    highlighterSlug: '/team-settings',
                   },
                   {
                     text: 'Billing',
                     href: `/billing?teamSlug=${store.currentTeam.slug}`,
-                    as: `/team/${store.currentTeam.slug}/billing`,
-                    simple: true,
-                  },
-                  {
-                    text: 'Your Settings',
-                    href: '/your-settings',
-                    highlighterSlug: '/your-settings',
+                    as: `/teams/${store.currentTeam.slug}/billing`,
+                    highlighterSlug: '/billing',
                   },
                   {
                     separator: true,
                   },
                   {
                     text: 'Log out',
-                    href: `${process.env.NEXT_PUBLIC_URL_API}/logout`,
-                    as: `${process.env.NEXT_PUBLIC_URL_API}/logout`,
+                    href: `${
+                      dev
+                        ? process.env.NEXT_PUBLIC_URL_API
+                        : process.env.NEXT_PUBLIC_PRODUCTION_URL_API
+                    }/logout`,
+                    as: `${
+                      dev
+                        ? process.env.NEXT_PUBLIC_URL_API
+                        : process.env.NEXT_PUBLIC_PRODUCTION_URL_API
+                    }/logout`,
                     externalServer: true,
                   },
                 ]}
@@ -135,9 +148,7 @@ function LayoutWrapper({
                   }}
                 />
 
-                <i className="material-icons" color="action" style={{ verticalAlign: 'super' }}>
-                  arrow_drop_down
-                </i>
+                <ArrowDropDownIcon color="action" style={{ verticalAlign: 'super' }} />
               </MenuWithLinks>
             </div>
             <hr />
@@ -157,9 +168,9 @@ function LayoutWrapper({
 
 type Props = {
   children: React.ReactNode;
+  store?: Store;
   isMobile?: boolean;
   firstGridItem?: boolean;
-  store?: Store;
   teamRequired?: boolean;
 };
 
@@ -175,7 +186,7 @@ class Layout extends React.Component<Props> {
 
     // console.log(isMobile);
 
-    // console.log(currentTeam);
+    // console.log(store, currentUser, currentTeam);
 
     if (!currentUser) {
       return (
@@ -201,7 +212,7 @@ class Layout extends React.Component<Props> {
                 Select existing team or create a new team.
                 <p />
                 <Link href="/create-team" as="/create-team">
-                  <Button variant="outlined" color="primary">
+                  <Button variant="contained" color="primary">
                     Create new team
                   </Button>
                 </Link>
@@ -210,7 +221,7 @@ class Layout extends React.Component<Props> {
           </LayoutWrapper>
         );
       } else {
-        console.log('team not required');
+        // console.log('team not required');
         return (
           <LayoutWrapper firstGridItem={firstGridItem} isMobile={isMobile} store={store}>
             <Grid
@@ -237,22 +248,44 @@ class Layout extends React.Component<Props> {
           <div>
             {isMobile || store.currentUrl.includes('create-team') ? null : (
               <React.Fragment>
-                <i
+                <LensIcon
                   style={{
-                    float: 'left',
                     margin: '15px 0px 10px 25px',
                     opacity: 0.8,
                     fontSize: '18px',
                     cursor: 'pointer',
-                    verticalAlign: 'top',
                   }}
-                  className="material-icons"
                   onClick={async () => {
                     await store.currentUser.toggleTheme(!store.currentUser.darkTheme);
                   }}
+                />
+                <span
+                  style={{
+                    float: 'right',
+                    margin: '15px 0px 10px 25px',
+                    fontSize: '11px',
+                  }}
                 >
-                  lens
-                </i>
+                  Check up our latest project (share with your biotech friends):{' '}
+                  <a
+                    style={{
+                      fontWeight: 600,
+                    }}
+                    target="_blank"
+                    href="https://workinbiotech.com"
+                    rel="noopener noreferrer"
+                  >
+                    Work in biotech
+                  </a>
+                </span>
+                <h4
+                  style={{
+                    margin: '15px 0px 10px 30px',
+                    fontWeight: 300,
+                  }}
+                >
+                  Current team: <b>{store.currentTeam.name}</b>
+                </h4>
               </React.Fragment>
             )}
             <div style={{ clear: 'both' }} />

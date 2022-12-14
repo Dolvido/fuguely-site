@@ -4,6 +4,8 @@ import { OAuth2Strategy as Strategy } from 'passport-google-oauth';
 import User, { UserDocument } from './models/User';
 import Invitation from './models/Invitation';
 
+const dev = process.env.NODE_ENV !== 'production';
+
 function setupGoogle({ server }) {
   if (!process.env.GOOGLE_CLIENTID) {
     return;
@@ -52,7 +54,7 @@ function setupGoogle({ server }) {
       {
         clientID: process.env.GOOGLE_CLIENTID,
         clientSecret: process.env.GOOGLE_CLIENTSECRET,
-        callbackURL: `${process.env.URL_API}/oauth2callback`,
+        callbackURL: `${dev ? process.env.URL_API : process.env.PRODUCTION_URL_API}/oauth2callback`,
         passReqToCallback: true,
       },
       verify,
@@ -113,7 +115,9 @@ function setupGoogle({ server }) {
         redirectUrlAfterLogin = `/create-team`;
       }
 
-      res.redirect(`${process.env.URL_APP}${redirectUrlAfterLogin}`);
+      res.redirect(
+        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}${redirectUrlAfterLogin}`,
+      );
     },
   );
 }

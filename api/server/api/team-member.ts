@@ -66,7 +66,6 @@ router.post('/user/update-profile', async (req: any, res, next) => {
 });
 
 router.post('/user/toggle-theme', async (req: any, res, next) => {
-  console.log('Express route: /user/toggle-theme');
   try {
     const { darkTheme } = req.body;
 
@@ -147,23 +146,25 @@ router.post('/get-initial-data', async (req: any, res, next) => {
       }
     }
 
-    res.json({ teams });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/teams', async (req: any, res, next) => {
-  try {
-    const teams = await Team.getAllTeamsForUser(req.user.id);
-
-    console.log(teams);
+    // console.log(teams.length, teams);
 
     res.json({ teams });
   } catch (err) {
     next(err);
   }
 });
+
+// router.get('/teams', async (req, res, next) => {
+//   try {
+//     const teams = await Team.getAllTeamsForUser(req.user.id);
+
+//     console.log(teams);
+
+//     res.json({ teams });
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
 router.get('/teams/get-members', async (req: any, res, next) => {
   try {

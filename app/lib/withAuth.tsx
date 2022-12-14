@@ -4,6 +4,8 @@ import React from 'react';
 
 import * as NProgress from 'nprogress';
 
+import * as gtag from './gtag';
+
 import { Store, getStore } from './store';
 
 Router.events.on('routeChangeStart', () => {
@@ -16,6 +18,15 @@ Router.events.on('routeChangeComplete', (url) => {
     store.changeCurrentUrl(url);
   }
 
+  if (window) {
+    gtag.pageview(url);
+    gtag.event({
+      action: 'view_item',
+      category: 'engagement',
+      label: store.currentUser ? store.currentUser.email : 'no_email',
+    });
+  }
+
   NProgress.done();
 });
 
@@ -24,7 +35,7 @@ Router.events.on('routeChangeError', () => NProgress.done());
 export default function withAuth(Component, { loginRequired = true, logoutRequired = false } = {}) {
   class WithAuth extends React.Component<{ store: Store }> {
     public static async getInitialProps(ctx) {
-      console.log('WithAuth.getInitialProps');
+      // console.log('WithAuth.getInitialProps');
 
       const { req } = ctx;
 
@@ -41,7 +52,7 @@ export default function withAuth(Component, { loginRequired = true, logoutRequir
     }
 
     public componentDidMount() {
-      console.log('WithAuth.componentDidMount');
+      // console.log('WithAuth.componentDidMount');
 
       const { store } = this.props;
       const user = store.currentUser;
@@ -58,8 +69,8 @@ export default function withAuth(Component, { loginRequired = true, logoutRequir
           redirectUrl = '/create-team';
           asUrl = '/create-team';
         } else {
-          redirectUrl = `/your-settings`;
-          asUrl = `/your-settings`;
+          redirectUrl = `/your-settings?teamSlug=${user.defaultTeamSlug}`;
+          asUrl = `/teams/${user.defaultTeamSlug}/your-settings`;
         }
       }
 

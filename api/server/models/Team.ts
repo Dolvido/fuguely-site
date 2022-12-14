@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 import Stripe from 'stripe';
 
 import { cancelSubscription } from '../stripe';
-import { generateNumberSlug } from '../utils/slugify';
+import { generateRandomSlug } from '../utils/slugify';
 import User from './User';
 
 const mongoSchema = new mongoose.Schema({
@@ -143,7 +143,7 @@ class TeamClass extends mongoose.Model {
       throw new Error('Bad data');
     }
 
-    const slug = await generateNumberSlug(this);
+    const slug = await generateRandomSlug(this);
 
     let defaultTeam = false;
     if ((await this.countDocuments({ teamLeaderId: userId })) === 0) {
@@ -187,10 +187,9 @@ class TeamClass extends mongoose.Model {
   }
 
   public static getAllTeamsForUser(userId: string) {
-    console.log(`userId:${userId}`);
     return this.find({ memberIds: userId }).setOptions({ lean: true });
   }
-  /*
+
   public static async removeMember({ teamId, teamLeaderId, userId }) {
     const team = await this.findById(teamId).select('memberIds teamLeaderId');
 
@@ -203,7 +202,7 @@ class TeamClass extends mongoose.Model {
     }
 
     await this.findByIdAndUpdate(teamId, { $pull: { memberIds: userId } });
-  }*/
+  }
 
   public static async subscribeTeam({
     session,

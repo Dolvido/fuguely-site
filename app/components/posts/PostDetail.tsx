@@ -1,6 +1,6 @@
-import Avatar from '@material-ui/core/Avatar';
-import Paper from '@material-ui/core/Paper';
-import Tooltip from '@material-ui/core/Tooltip';
+import Avatar from '@mui/material/Avatar';
+import Paper from '@mui/material/Paper';
+import Tooltip from '@mui/material/Tooltip';
 import { observer } from 'mobx-react';
 import moment from 'moment';
 import React from 'react';
@@ -171,7 +171,7 @@ class PostDetail extends React.Component<Props> {
     if (onEditClick) {
       onEditClick(post);
     }
-    console.log(`PostDetail: ${post._id}`);
+    // console.log(`PostDetail: ${post._id}`);
   };
 
   public deletePost = () => {

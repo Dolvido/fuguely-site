@@ -6,7 +6,6 @@ import sendEmail from '../aws-ses';
 import { addToMailchimp } from '../mailchimp';
 import { generateSlug } from '../utils/slugify';
 import getEmailTemplate from './EmailTemplate';
-
 import Team, { TeamDocument } from './Team';
 
 import { getListOfInvoices } from '../stripe';
@@ -91,7 +90,6 @@ const mongoSchema = new mongoose.Schema({
   },
 });
 
-// mongoose UserDocument interface
 export interface UserDocument extends mongoose.Document {
   slug: string;
   createdAt: Date;
@@ -180,10 +178,8 @@ interface UserModel extends mongoose.Model<UserDocument> {
     email: string;
   }): Promise<UserDocument>;
 
-  // define types for toggle theme method
   toggleTheme({ userId, darkTheme }: { userId: string; darkTheme: boolean }): Promise<void>;
 
-  // type definition for getMembersForTeam method
   getMembersForTeam({
     userId,
     teamId,
@@ -192,7 +188,6 @@ interface UserModel extends mongoose.Model<UserDocument> {
     teamId: string;
   }): Promise<UserDocument[]>;
 
-  // type definition for checkPermissionAndGetTeam method
   checkPermissionAndGetTeam({
     userId,
     teamId,
@@ -220,12 +215,11 @@ interface UserModel extends mongoose.Model<UserDocument> {
   getListOfInvoicesForCustomer({ userId }: { userId: string }): Promise<UserDocument>;
 }
 
-// UserClass
 class UserClass extends mongoose.Model {
   public static async getUserBySlug({ slug }) {
     console.log('Static method: getUserBySlug');
 
-    return this.findOne({ slug }, 'email displayName avatarUrl').setOptions({ lean: true });
+    return this.findOne({ slug }, 'email displayName avatarUrl');
   }
 
   public static async updateProfile({ userId, name, avatarUrl }) {
@@ -317,7 +311,7 @@ class UserClass extends mongoose.Model {
 
     try {
       await sendEmail({
-        from: `Luke from fuguely <${process.env.EMAIL_SUPPORT_FROM_ADDRESS}>`,
+        from: `Kelly from saas-app.async-await.com <${process.env.EMAIL_SUPPORT_FROM_ADDRESS}>`,
         to: [email],
         subject: emailTemplate.subject,
         body: emailTemplate.message,
@@ -380,7 +374,7 @@ class UserClass extends mongoose.Model {
     return _.pick(newUser, this.publicFields());
   }
 
-  // define static toggle theme method
+  // try private instead of public, run `yarn build`
   public static toggleTheme({ userId, darkTheme }) {
     return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
   }
@@ -474,7 +468,6 @@ class UserClass extends mongoose.Model {
       throw new Error('Bad data');
     }
 
-    // search Teams collection by id
     const team = await Team.findById(teamId).select('memberIds').setOptions({ lean: true });
 
     if (!team || team.memberIds.indexOf(userId) === -1) {

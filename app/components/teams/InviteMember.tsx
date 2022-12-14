@@ -1,8 +1,8 @@
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import TextField from '@material-ui/core/TextField';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
 import { inject, observer } from 'mobx-react';
 import NProgress from 'nprogress';
 import React from 'react';
@@ -52,12 +52,7 @@ class InviteMember extends React.Component<Props, State> {
             <Button variant="outlined" onClick={this.handleClose} disabled={this.state.disabled}>
               Cancel
             </Button>{' '}
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={this.state.disabled}
-            >
+            <Button type="submit" variant="contained" color="primary">
               Invite
             </Button>
           </form>

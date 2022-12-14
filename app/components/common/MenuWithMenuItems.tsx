@@ -1,5 +1,6 @@
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import React from 'react';
 
 type Props = {
@@ -26,16 +27,13 @@ class MenuWithMenuItems extends React.PureComponent<Props, State> {
 
     return (
       <div style={{ verticalAlign: 'middle' }}>
-        <i
+        <MoreVertIcon
           aria-controls={menuElem ? menuOptions.id : null}
           data-id={menuOptions.dataId}
           aria-haspopup="true"
           style={{ fontSize: '14px', opacity: 0.7, cursor: 'pointer' }}
-          className="material-icons"
           onClick={(e) => this.handleClick(e)}
-        >
-          more_vert
-        </i>
+        />
 
         <Menu
           id={menuOptions.id}

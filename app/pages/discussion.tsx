@@ -1,8 +1,9 @@
-import Avatar from '@material-ui/core/Avatar';
-import Tooltip from '@material-ui/core/Tooltip';
+import Avatar from '@mui/material/Avatar';
+import Tooltip from '@mui/material/Tooltip';
 import Head from 'next/head';
 import Router from 'next/router';
 import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { observer } from 'mobx-react';
 
@@ -21,132 +22,92 @@ type Props = {
   discussionSlug: string;
   isServer: boolean;
   isMobile: boolean;
+  firstGridItem: boolean;
   teamRequired: boolean;
 };
 
-type State = {
-  selectedPost: Post;
-  showMarkdownClicked: boolean;
-};
+function DiscussionPageCompFunctional({
+  store,
+  teamSlug,
+  discussionSlug,
+  isServer,
+  isMobile,
+  firstGridItem,
+  teamRequired,
+}: Props) {
+  const [selectedPost, setSelectedPost] = useState<Post>(null);
+  const [showMarkdownClicked, setShowMarkdownClicked] = useState<boolean>(false);
 
-class DiscussionPageComp extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      selectedPost: null,
-      showMarkdownClicked: false,
-    };
+  function usePrevious(value) {
+    const ref = useRef();
+    useEffect(() => {
+      ref.current = value;
+    });
+    return ref.current;
   }
 
-  public render() {
-    const { store, isMobile, discussionSlug } = this.props;
-    const { currentTeam } = store;
-    const { selectedPost } = this.state;
+  const prevDiscussionSlug = usePrevious(discussionSlug);
 
-    if (!currentTeam || currentTeam.slug !== this.props.teamSlug) {
-      return (
-        <Layout {...this.props}>
-          <Head>
-            <title>No Team is found.</title>
-          </Head>
-          <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>No Team is found.</div>
-        </Layout>
-      );
-    }
+  const mounted = useRef();
 
-    const discussion = this.getDiscussion(discussionSlug);
+  useEffect(() => {
+    if (!mounted.current) {
+      console.log('useEffect 1 for DiscussionPageCompFunctional');
 
-    if (!discussion) {
-      if (currentTeam.isLoadingDiscussions) {
-        return (
-          <Layout {...this.props}>
-            <Head>
-              <title>Loading...</title>
-            </Head>
-            <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-              <p>Loading Discussions...</p>
-            </div>
-          </Layout>
-        );
-      } else {
-        return (
-          <Layout {...this.props}>
-            <Head>
-              <title>No Discussion is found.</title>
-            </Head>
-            <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-              <p>No Discussion is found.</p>
-            </div>
-          </Layout>
-        );
+      if (store.currentTeam && (!isServer || !discussionSlug)) {
+        store.currentTeam.loadDiscussions().catch((err) => notify(err));
+      }
+
+      const discussion = getDiscussion(discussionSlug);
+
+      if (discussion) {
+        discussion.joinSocketRooms();
+      }
+
+      // console.log(store.socket);
+
+      store.socket.on('discussionEvent', handleDiscussionEvent);
+      store.socket.on('postEvent', handlePostEvent);
+      store.socket.on('reconnect', handleSocketReconnect);
+
+      (mounted as any).current = true;
+    } else {
+      console.log('useEffect 2 for DiscussionPageCompFunctional');
+
+      if (prevDiscussionSlug) {
+        const prevDiscussion = getDiscussion(prevDiscussionSlug);
+        if (prevDiscussion) {
+          prevDiscussion.leaveSocketRooms();
+        }
+      }
+
+      const discussion = getDiscussion(discussionSlug);
+
+      if (!isServer && discussion) {
+        discussion.loadPosts().catch((err) => notify(err));
+      }
+
+      if (discussion) {
+        discussion.joinSocketRooms();
       }
     }
 
-    const title = discussion ? `${discussion.name} · Discussion` : 'Discussions';
+    return () => {
+      const discussion = getDiscussion(discussionSlug);
 
-    return (
-      <Layout {...this.props}>
-        <Head>
-          <title>{title}</title>
-        </Head>
-        <div style={{ padding: isMobile ? '0px' : '0px 30px', height: '100vh' }}>
-          <h4>
-            <span style={{ fontWeight: 300 }}>Discussion : </span>
-            {(discussion && discussion.name) || 'No Discussion is found.'}
-          </h4>{' '}
-          Visible to :{' '}
-          {discussion
-            ? discussion.members.map((m) => (
-                <Tooltip
-                  title={m.displayName}
-                  placement="right"
-                  disableFocusListener
-                  disableTouchListener
-                  key={m._id}
-                >
-                  <Avatar
-                    role="presentation"
-                    src={m.avatarUrl}
-                    alt={m.avatarUrl}
-                    key={m._id}
-                    style={{
-                      margin: '0px 5px',
-                      display: 'inline-flex',
-                      width: '30px',
-                      height: '30px',
-                      verticalAlign: 'middle',
-                    }}
-                  />
-                </Tooltip>
-              ))
-            : null}
-          <p />
-          {this.renderPosts()}
-          {discussion && !discussion.isLoadingPosts ? (
-            <React.Fragment>
-              {selectedPost ? null : (
-                <PostForm
-                  post={null}
-                  discussion={discussion}
-                  members={discussion.members}
-                  isMobile={this.props.isMobile}
-                  store={store}
-                />
-              )}
-            </React.Fragment>
-          ) : null}
-          <p />
-          <br />
-        </div>
-      </Layout>
-    );
-  }
+      if (discussion) {
+        discussion.leaveSocketRooms();
+      }
 
-  public getDiscussion(slug: string): Discussion {
-    const { store, teamSlug } = this.props;
-    const { currentTeam } = store;
+      store.socket.off('discussionEvent', handleDiscussionEvent);
+      store.socket.off('postEvent', handlePostEvent);
+      store.socket.off('reconnect', handleSocketReconnect);
+    };
+  }, [discussionSlug]);
 
+  const { currentTeam } = store;
+
+  const getDiscussion = (slug: string): Discussion => {
     if (!currentTeam) {
       return;
     }
@@ -154,7 +115,7 @@ class DiscussionPageComp extends React.Component<Props, State> {
     if (!slug && currentTeam.discussions.length > 0) {
       Router.replace(
         `/discussion?teamSlug=${teamSlug}&discussionSlug=${currentTeam.orderedDiscussions[0].slug}`,
-        `/team/${teamSlug}/discussions/${currentTeam.orderedDiscussions[0].slug}`,
+        `/teams/${teamSlug}/discussions/${currentTeam.orderedDiscussions[0].slug}`,
       );
       return;
     }
@@ -164,12 +125,10 @@ class DiscussionPageComp extends React.Component<Props, State> {
     }
 
     return null;
-  }
+  };
 
-  public renderPosts() {
-    const { isServer, store, isMobile } = this.props;
-    const { selectedPost, showMarkdownClicked } = this.state;
-    const discussion = this.getDiscussion(this.props.discussionSlug);
+  const renderPosts = () => {
+    const discussion = getDiscussion(discussionSlug);
 
     if (!discussion.isLoadingPosts && discussion.posts.length === 0) {
       return <p>Empty Discussion.</p>;
@@ -194,19 +153,17 @@ class DiscussionPageComp extends React.Component<Props, State> {
                   discussion={discussion}
                   members={discussion.members}
                   onFinished={() => {
-                    this.setState({
-                      selectedPost: null,
-                      showMarkdownClicked: false,
-                    });
+                    setSelectedPost(null);
+                    setShowMarkdownClicked(false);
                   }}
                 />
               ) : (
                 <PostDetail
                   key={p._id}
                   post={p}
-                  onEditClick={this.onEditClickCallback}
-                  onShowMarkdownClick={this.onSnowMarkdownClickCallback}
-                  isMobile={this.props.isMobile}
+                  onEditClick={onEditClickCallback}
+                  onShowMarkdownClick={onSnowMarkdownClickCallback}
+                  isMobile={isMobile}
                   store={store}
                 />
               ),
@@ -216,100 +173,163 @@ class DiscussionPageComp extends React.Component<Props, State> {
         {discussion && discussion.isLoadingPosts && !isServer ? <p>{loading}</p> : null}
       </React.Fragment>
     );
-  }
-
-  public onEditClickCallback = (post) => {
-    this.setState({ selectedPost: post, showMarkdownClicked: false });
   };
 
-  public onSnowMarkdownClickCallback = (post) => {
-    this.setState({ selectedPost: post, showMarkdownClicked: true });
+  const onEditClickCallback = (post) => {
+    setSelectedPost(post);
+    setShowMarkdownClicked(false);
   };
 
-  public componentDidMount() {
-    const { discussionSlug, store, isServer } = this.props;
+  const onSnowMarkdownClickCallback = (post) => {
+    setSelectedPost(post);
+    setShowMarkdownClicked(true);
+  };
 
-    if (store.currentTeam && (!isServer || !discussionSlug)) {
-      store.currentTeam.loadDiscussions().catch((err) => notify(err));
-    }
+  const handleDiscussionEvent = (data) => {
+    // console.log('discussion realtime event', data);
 
-    const discussion = this.getDiscussion(discussionSlug);
-
-    if (discussion) {
-      discussion.joinSocketRooms();
-    }
-
-    console.log(store.socket);
-
-    store.socket.on('discussionEvent', this.handleDiscussionEvent);
-    store.socket.on('postEvent', this.handlePostEvent);
-    store.socket.on('reconnect', this.handleSocketReconnect);
-  }
-
-  public componentWillUnmount() {
-    const { discussionSlug, store } = this.props;
-
-    const discussion = this.getDiscussion(discussionSlug);
-
-    if (discussion) {
-      discussion.leaveSocketRooms();
-    }
-
-    store.socket.off('discussionEvent', this.handleDiscussionEvent);
-    store.socket.off('postEvent', this.handlePostEvent);
-    store.socket.off('reconnect', this.handleSocketReconnect);
-  }
-
-  public componentDidUpdate(prevProps: Props) {
-    const { discussionSlug, isServer } = this.props;
-
-    if (prevProps.discussionSlug !== discussionSlug) {
-      if (prevProps.discussionSlug) {
-        const prevDiscussion = this.getDiscussion(prevProps.discussionSlug);
-        if (prevDiscussion) {
-          prevDiscussion.leaveSocketRooms();
-        }
-      }
-
-      const discussion = this.getDiscussion(discussionSlug);
-
-      if (!isServer && discussion) {
-        discussion.loadPosts().catch((err) => notify(err));
-      }
-
-      if (discussion) {
-        discussion.joinSocketRooms();
-      }
-    }
-  }
-
-  private handleDiscussionEvent = (data) => {
-    console.log('discussion realtime event', data);
-
-    const discussion = this.getDiscussion(this.props.discussionSlug);
+    const discussion = getDiscussion(discussionSlug);
     if (discussion) {
       discussion.handleDiscussionRealtimeEvent(data);
     }
   };
 
-  private handlePostEvent = (data) => {
-    console.log('post realtime event', data);
+  const handlePostEvent = (data) => {
+    // console.log('post realtime event', data);
 
-    const discussion = this.getDiscussion(this.props.discussionSlug);
+    const discussion = getDiscussion(discussionSlug);
     if (discussion) {
       discussion.handlePostRealtimeEvent(data);
     }
   };
 
-  private handleSocketReconnect = () => {
+  const handleSocketReconnect = () => {
     console.log('pages/discussion.tsx: socket re-connected');
 
-    const discussion = this.getDiscussion(this.props.discussionSlug);
+    const discussion = getDiscussion(discussionSlug);
     if (discussion) {
       discussion.loadPosts().catch((err) => notify(err));
       discussion.joinSocketRooms();
     }
   };
+
+  if (!currentTeam || currentTeam.slug !== teamSlug) {
+    return (
+      <Layout
+        store={store}
+        isMobile={isMobile}
+        firstGridItem={firstGridItem}
+        teamRequired={teamRequired}
+      >
+        <Head>
+          <title>No Team is found.</title>
+        </Head>
+        <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>No Team is found.</div>
+      </Layout>
+    );
+  }
+
+  const discussion = getDiscussion(discussionSlug);
+
+  if (!discussion) {
+    if (currentTeam.isLoadingDiscussions) {
+      return (
+        <Layout
+          store={store}
+          isMobile={isMobile}
+          firstGridItem={firstGridItem}
+          teamRequired={teamRequired}
+        >
+          <Head>
+            <title>Loading...</title>
+          </Head>
+          <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
+            <p>Loading Discussions...</p>
+          </div>
+        </Layout>
+      );
+    } else {
+      return (
+        <Layout
+          store={store}
+          isMobile={isMobile}
+          firstGridItem={firstGridItem}
+          teamRequired={teamRequired}
+        >
+          <Head>
+            <title>No Discussion is found.</title>
+          </Head>
+          <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
+            <p>No Discussion is found.</p>
+          </div>
+        </Layout>
+      );
+    }
+  }
+
+  const title = discussion ? `${discussion.name} · Discussion` : 'Discussions';
+
+  return (
+    <Layout
+      store={store}
+      isMobile={isMobile}
+      firstGridItem={firstGridItem}
+      teamRequired={teamRequired}
+    >
+      <Head>
+        <title>{title}</title>
+      </Head>
+      <div style={{ padding: isMobile ? '0px' : '0px 30px', height: '100vh' }}>
+        <h4>
+          <span style={{ fontWeight: 300 }}>Discussion : </span>
+          {(discussion && discussion.name) || 'No Discussion is found.'}
+        </h4>{' '}
+        Visible to :{' '}
+        {discussion
+          ? discussion.members.map((m) => (
+              <Tooltip
+                title={m.displayName}
+                placement="right"
+                disableFocusListener
+                disableTouchListener
+                key={m._id}
+              >
+                <Avatar
+                  role="presentation"
+                  src={m.avatarUrl}
+                  alt={m.avatarUrl}
+                  key={m._id}
+                  style={{
+                    margin: '0px 5px',
+                    display: 'inline-flex',
+                    width: '30px',
+                    height: '30px',
+                    verticalAlign: 'middle',
+                  }}
+                />
+              </Tooltip>
+            ))
+          : null}
+        <p />
+        {renderPosts()}
+        {discussion && !discussion.isLoadingPosts ? (
+          <React.Fragment>
+            {selectedPost ? null : (
+              <PostForm
+                post={null}
+                discussion={discussion}
+                members={discussion.members}
+                isMobile={isMobile}
+                store={store}
+              />
+            )}
+          </React.Fragment>
+        ) : null}
+        <p />
+        <br />
+      </div>
+    </Layout>
+  );
 }
 
-export default withAuth(observer(DiscussionPageComp));
+export default withAuth(observer(DiscussionPageCompFunctional));
