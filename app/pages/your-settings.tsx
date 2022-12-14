@@ -137,7 +137,7 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
       firstGridItem={firstGridItem}
     >
       <Head>
-        <title>Your Settings at Async</title>
+        <title>Your Settings at Fuguely</title>
       </Head>
       <div
         style={{
@@ -150,8 +150,8 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
         <div>
           <DoneIcon color="action" style={{ verticalAlign: 'text-bottom' }} />{' '}
           {currentUser.isSignedupViaGoogle
-            ? 'You signed up on Async using your Google account.'
-            : 'You signed up on Async using your email.'}
+            ? 'You signed up on fuguely using your Google account.'
+            : 'You signed up on fuguely using your email.'}
           <p />
           <li>
             Your email: <b>{currentUser.email}</b>
