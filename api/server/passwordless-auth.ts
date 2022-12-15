@@ -89,10 +89,10 @@ function setupPasswordless({ server }) {
       }
     },
     async (req, res) => {
-      let teamSlugOfInvitedTeam;
+      let studioSlugOfInvitedStudio;
 
       if (req.user && req.session.invitationToken) {
-        teamSlugOfInvitedTeam = await Invitation.addUserToTeam({
+        studioSlugOfInvitedStudio = await Invitation.addUserToStudio({
           token: req.session.invitationToken,
           user: req.user,
         }).catch((err) => console.error(err));
@@ -101,12 +101,12 @@ function setupPasswordless({ server }) {
       }
 
       let redirectUrlAfterLogin;
-      const defaultTeamSlug = req.user && req.user.defaultTeamSlug;
+      const defaultStudioSlug = req.user && req.user.defaultStudioSlug;
 
-      if (teamSlugOfInvitedTeam || defaultTeamSlug) {
+      if (studioSlugOfInvitedStudio || defaultStudioSlug) {
         redirectUrlAfterLogin = `/your-settings`;
       } else {
-        redirectUrlAfterLogin = `/create-team`;
+        redirectUrlAfterLogin = `/create-studio`;
       }
 
       res.redirect(

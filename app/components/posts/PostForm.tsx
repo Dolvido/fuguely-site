@@ -166,9 +166,9 @@ class PostForm extends React.Component<Props, State> {
       return;
     }
 
-    const { currentTeam } = store;
-    if (!currentTeam) {
-      notify('Team is not selected or does not exist.');
+    const { currentStudio } = store;
+    if (!currentStudio) {
+      notify('Studio is not selected or does not exist.');
       return;
     }
 
@@ -185,7 +185,7 @@ class PostForm extends React.Component<Props, State> {
           discussionName: discussion.name,
           discussionLink: `${
             dev ? process.env.NEXT_PUBLIC_URL_APP : process.env.NEXT_PUBLIC_PRODUCTION_URL_APP
-          }/teams/${discussion.team.slug}/discussions/${discussion.slug}`,
+          }/studios/${discussion.studio.slug}/discussions/${discussion.slug}`,
           postContent: post.content,
           authorName: post.user.displayName,
           userIds: userIdsForLambda,

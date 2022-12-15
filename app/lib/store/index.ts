@@ -2,11 +2,11 @@ import { action, configure, IObservableArray, observable, makeObservable } from 
 import { enableStaticRendering } from 'mobx-react';
 import { io, Socket } from 'socket.io-client';
 
-import { addTeamApiMethod, getTeamInvitationsApiMethod } from '../api/team-leader';
-import { getTeamMembersApiMethod } from '../api/team-member';
+import { addStudioApiMethod, getStudioInvitationsApiMethod } from '../api/studio-teacher';
+import { getStudioMembersApiMethod } from '../api/studio-member';
 
 import { User } from './user';
-import { Team } from './team';
+import { Studio } from './studio';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -20,9 +20,9 @@ class Store {
   public currentUser?: User = null;
   public currentUrl = '';
 
-  public currentTeam?: Team = null;
+  public currentStudio?: Studio = null;
 
-  public teams: IObservableArray<Team> = observable([]);
+  public studios: IObservableArray<Studio> = observable([]);
 
   public socket: Socket;
 
@@ -38,11 +38,11 @@ class Store {
     makeObservable(this, {
       currentUser: observable,
       currentUrl: observable,
-      currentTeam: observable,
+      currentStudio: observable,
 
       changeCurrentUrl: action,
       setCurrentUser: action,
-      setCurrentTeam: action,
+      setCurrentStudio: action,
     });
 
     this.isServer = !!isServer;
@@ -55,10 +55,10 @@ class Store {
 
     // console.log(initialState);
 
-    this.setCurrentTeam(initialState.team);
+    this.setCurrentStudio(initialState.studio);
 
-    if (initialState.teams && initialState.teams.length > 0) {
-      this.setInitialTeamsStoreMethod(initialState.teams);
+    if (initialState.studios && initialState.studios.length > 0) {
+      this.setInitialStudiosStoreMethod(initialState.studios);
     }
 
     this.socket = socket;
@@ -86,42 +86,42 @@ class Store {
     }
   }
 
-  public async addTeam({ name, avatarUrl }: { name: string; avatarUrl: string }): Promise<Team> {
-    const data = await addTeamApiMethod({ name, avatarUrl });
-    const team = new Team({ store: this, ...data });
+  public async addStudio({ name, avatarUrl }: { name: string; avatarUrl: string }): Promise<Studio> {
+    const data = await addStudioApiMethod({ name, avatarUrl });
+    const studio = new Studio({ store: this, ...data });
 
-    return team;
+    return studio;
   }
 
-  public async setCurrentTeam(team) {
-    if (this.currentTeam) {
-      if (this.currentTeam.slug === team.slug) {
+  public async setCurrentStudio(studio) {
+    if (this.currentStudio) {
+      if (this.currentStudio.slug === studio.slug) {
         return;
       }
     }
 
-    if (team) {
-      this.currentTeam = new Team({ ...team, store: this });
+    if (studio) {
+      this.currentStudio = new Studio({ ...studio, store: this });
 
       const users =
-        team.initialMembers || (await getTeamMembersApiMethod(this.currentTeam._id)).users;
+        studio.initialMembers || (await getStudioMembersApiMethod(this.currentStudio._id)).users;
 
       const invitations =
-        team.initialInvitations ||
-        (await getTeamInvitationsApiMethod(this.currentTeam._id)).invitations;
+        studio.initialInvitations ||
+        (await getStudioInvitationsApiMethod(this.currentStudio._id)).invitations;
 
-      this.currentTeam.setInitialMembersAndInvitations(users, invitations);
+      this.currentStudio.setInitialMembersAndInvitations(users, invitations);
     } else {
-      this.currentTeam = null;
+      this.currentStudio = null;
     }
   }
 
-  private setInitialTeamsStoreMethod(teams: any[]) {
-    // console.log(initialTeams);
+  private setInitialStudiosStoreMethod(studios: any[]) {
+    // console.log(initialStudios);
 
-    const teamObjs = teams.map((t) => new Team({ store: this, ...t }));
+    const studioObjs = studios.map((t) => new Studio({ store: this, ...t }));
 
-    this.teams.replace(teamObjs);
+    this.studios.replace(studioObjs);
   }
 }
 

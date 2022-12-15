@@ -6,16 +6,16 @@ import {
   editDiscussionApiMethod,
   getPostListApiMethod,
   sendDataToLambdaApiMethod,
-} from '../api/team-member';
+} from '../api/studio-member';
 import { Store } from './index';
-import { Team } from './team';
+import { Studio } from './studio';
 import { Post } from './post';
 
 class Discussion {
   public _id: string;
   public createdUserId: string;
   public store: Store;
-  public team: Team;
+  public studio: Studio;
 
   public name: string;
   public slug: string;
@@ -54,7 +54,7 @@ class Discussion {
     this._id = params._id;
     this.createdUserId = params.createdUserId;
     this.store = params.store;
-    this.team = params.team;
+    this.studio = params.studio;
 
     this.name = params.name;
     this.slug = params.slug;
@@ -93,7 +93,7 @@ class Discussion {
   }
 
   get members() {
-    return this.memberIds.map((id) => this.team.members.get(id)).filter((u) => !!u);
+    return this.memberIds.map((id) => this.studio.members.get(id)).filter((u) => !!u);
   }
 
   public setInitialPosts(posts) {
@@ -160,7 +160,7 @@ class Discussion {
   public joinSocketRooms() {
     if (this.store.socket) {
       console.log('joining socket discussion room', this.name);
-      this.store.socket.emit('joinTeamRoom', this.team._id);
+      this.store.socket.emit('joinStudioRoom', this.studio._id);
       this.store.socket.emit('joinDiscussionRoom', this._id);
     }
   }
@@ -168,7 +168,7 @@ class Discussion {
   public leaveSocketRooms() {
     if (this.store.socket) {
       console.log('leaving socket discussion room', this.name);
-      this.store.socket.emit('leaveTeamRoom', this.team._id);
+      this.store.socket.emit('leaveStudioRoom', this.studio._id);
       this.store.socket.emit('leaveDiscussionRoom', this._id);
     }
   }
@@ -187,17 +187,17 @@ class Discussion {
   };
 
   public addDiscussionToLocalCache(data): Discussion {
-    const obj = new Discussion({ team: this.team, store: this.store, ...data });
+    const obj = new Discussion({ studio: this.studio, store: this.store, ...data });
 
     if (obj.memberIds.includes(this.store.currentUser._id)) {
-      this.team.discussions.push(obj);
+      this.studio.discussions.push(obj);
     }
 
     return obj;
   }
 
   public editDiscussionFromLocalCache(data) {
-    const discussion = this.team.discussions.find((item) => item._id === data._id);
+    const discussion = this.studio.discussions.find((item) => item._id === data._id);
     if (discussion) {
       if (data.memberIds && data.memberIds.includes(this.store.currentUser._id)) {
         discussion.changeLocalCache(data);
@@ -210,8 +210,8 @@ class Discussion {
   }
 
   public deleteDiscussionFromLocalCache(discussionId: string) {
-    const discussion = this.team.discussions.find((item) => item._id === discussionId);
-    this.team.discussions.remove(discussion);
+    const discussion = this.studio.discussions.find((item) => item._id === discussionId);
+    this.studio.discussions.remove(discussion);
   }
 
   public handlePostRealtimeEvent(data) {

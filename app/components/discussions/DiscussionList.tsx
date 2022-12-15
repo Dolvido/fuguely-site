@@ -4,14 +4,14 @@ import { observer } from 'mobx-react';
 import React from 'react';
 
 import { Store } from '../../lib/store';
-import { Team } from '../../lib/store/team';
+import { Studio } from '../../lib/store/studio';
 
 import CreateDiscussionForm from './CreateDiscussionForm';
 import DiscussionListItem from './DiscussionListItem';
 
 import notify from '../../lib/notify';
 
-type Props = { store: Store; team: Team; isMobile: boolean };
+type Props = { store: Store; studio: Studio; isMobile: boolean };
 
 type State = { discussionFormOpen: boolean };
 
@@ -25,17 +25,17 @@ class DiscussionList extends React.Component<Props, State> {
   }
 
   public componentDidMount() {
-    this.props.team.loadDiscussions().catch((err) => notify(err));
+    this.props.studio.loadDiscussions().catch((err) => notify(err));
   }
 
   public componentDidUpdate(prevProps: Props) {
-    if (this.props.team._id !== prevProps.team._id) {
-      this.props.team.loadDiscussions().catch((err) => notify(err));
+    if (this.props.studio._id !== prevProps.studio._id) {
+      this.props.studio.loadDiscussions().catch((err) => notify(err));
     }
   }
 
   public render() {
-    const { store, team } = this.props;
+    const { store, studio } = this.props;
 
     const isThemeDark = store && store.currentUser && store.currentUser.darkTheme === true;
 
@@ -52,13 +52,13 @@ class DiscussionList extends React.Component<Props, State> {
         </Tooltip>
         <p />
         <ul style={{ listStyle: 'none', padding: '0px' }}>
-          {team &&
-            team.orderedDiscussions.map((d) => {
+          {studio &&
+            studio.orderedDiscussions.map((d) => {
               return (
                 <DiscussionListItem
                   key={d._id}
                   discussion={d}
-                  team={team}
+                  studio={studio}
                   isMobile={this.props.isMobile}
                   store={this.props.store}
                 />

@@ -11,7 +11,7 @@ import { Mention, MentionsInput } from 'react-mentions';
 import {
   getSignedRequestForUploadApiMethod,
   uploadFileUsingSignedPutRequestApiMethod,
-} from '../../lib/api/team-member';
+} from '../../lib/api/studio-member';
 import notify from '../../lib/notify';
 import { resizeImage } from '../../lib/resizeImage';
 import { Store } from '../../lib/store';
@@ -241,12 +241,12 @@ class PostEditor extends React.Component<Props, State> {
     }
 
     const { store } = this.props;
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
     NProgress.start();
 
     const bucket = process.env.NEXT_PUBLIC_BUCKET_FOR_POSTS;
-    const prefix = `${currentTeam.slug}`;
+    const prefix = `${currentStudio.slug}`;
     const fileName = file.name;
     const fileType = file.type;
 

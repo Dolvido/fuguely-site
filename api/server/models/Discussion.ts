@@ -2,7 +2,7 @@ import { uniq } from 'lodash';
 import * as mongoose from 'mongoose';
 
 import { generateRandomSlug } from '../utils/slugify';
-import Team, { TeamDocument } from './Team';
+import Studio, { StudioDocument } from './Studio';
 import Post from './Post';
 
 const mongoSchema = new mongoose.Schema({
@@ -10,7 +10,7 @@ const mongoSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  teamId: {
+  studioId: {
     type: String,
     required: true,
   },
@@ -42,7 +42,7 @@ const mongoSchema = new mongoose.Schema({
 
 export interface DiscussionDocument extends mongoose.Document {
   createdUserId: string;
-  teamId: string;
+  studioId: string;
   name: string;
   slug: string;
   memberIds: string[];
@@ -53,22 +53,22 @@ export interface DiscussionDocument extends mongoose.Document {
 interface DiscussionModel extends mongoose.Model<DiscussionDocument> {
   getList({
     userId,
-    teamId,
+    studioId,
   }: {
     userId: string;
-    teamId: string;
+    studioId: string;
   }): Promise<{ discussions: DiscussionDocument[] }>;
 
   add({
     name,
     userId,
-    teamId,
+    studioId,
     memberIds,
     notificationType,
   }: {
     name: string;
     userId: string;
-    teamId: string;
+    studioId: string;
     memberIds: string[];
     notificationType: string;
   }): Promise<DiscussionDocument>;
@@ -87,42 +87,42 @@ interface DiscussionModel extends mongoose.Model<DiscussionDocument> {
     notificationType: string;
   }): Promise<DiscussionDocument>;
 
-  delete({ userId, id }: { userId: string; id: string }): Promise<{ teamId: string }>;
+  delete({ userId, id }: { userId: string; id: string }): Promise<{ studioId: string }>;
 
-  checkPermissionAndGetTeam({
+  checkPermissionAndGetStudio({
     userId,
-    teamId,
+    studioId,
     memberIds,
   }: {
     userId: string;
-    teamId: string;
+    studioId: string;
     memberIds: string[];
-  }): Promise<TeamDocument>;
+  }): Promise<StudioDocument>;
 }
 
 class DiscussionClass extends mongoose.Model {
-  public static async getList({ userId, teamId }) {
-    await this.checkPermissionAndGetTeam({ userId, teamId });
+  public static async getList({ userId, studioId }) {
+    await this.checkPermissionAndGetStudio({ userId, studioId });
 
-    const filter: any = { teamId, memberIds: userId };
+    const filter: any = { studioId, memberIds: userId };
 
     const discussions: any[] = await this.find(filter).setOptions({ lean: true });
 
     return { discussions };
   }
 
-  public static async add({ name, userId, teamId, memberIds = [], notificationType }) {
+  public static async add({ name, userId, studioId, memberIds = [], notificationType }) {
     if (!name) {
       throw new Error('Bad data');
     }
 
-    await this.checkPermissionAndGetTeam({ userId, teamId, memberIds });
+    await this.checkPermissionAndGetStudio({ userId, studioId, memberIds });
 
-    const slug = await generateRandomSlug(this, { teamId });
+    const slug = await generateRandomSlug(this, { studioId });
 
     return this.create({
       createdUserId: userId,
-      teamId,
+      studioId,
       name,
       slug,
       memberIds: uniq([userId, ...memberIds]),
@@ -137,17 +137,17 @@ class DiscussionClass extends mongoose.Model {
     }
 
     const discussion = await this.findById(id)
-      .select('teamId createdUserId')
+      .select('studioId createdUserId')
       .setOptions({ lean: true });
 
-    const team = await this.checkPermissionAndGetTeam({
+    const studio = await this.checkPermissionAndGetStudio({
       userId,
-      teamId: discussion.teamId,
+      studioId: discussion.studioId,
       memberIds,
     });
 
-    if (discussion.createdUserId !== userId && team.teamLeaderId !== userId) {
-      throw new Error('Permission denied. Only author or team leader can edit Discussion.');
+    if (discussion.createdUserId !== userId && studio.studioTeacherId !== userId) {
+      throw new Error('Permission denied. Only author or studio teacher can edit Discussion.');
     }
 
     const updatedObj = await this.findOneAndUpdate(
@@ -168,37 +168,37 @@ class DiscussionClass extends mongoose.Model {
       throw new Error('Bad data');
     }
 
-    const discussion = await this.findById(id).select('teamId').setOptions({ lean: true });
+    const discussion = await this.findById(id).select('studioId').setOptions({ lean: true });
 
-    await this.checkPermissionAndGetTeam({ userId, teamId: discussion.teamId });
+    await this.checkPermissionAndGetStudio({ userId, studioId: discussion.studioId });
 
     await Post.deleteMany({ discussionId: id });
 
     await this.deleteOne({ _id: id });
 
-    return { teamId: discussion.teamId };
+    return { studioId: discussion.studioId };
   }
 
-  private static async checkPermissionAndGetTeam({ userId, teamId, memberIds = [] }) {
-    if (!userId || !teamId) {
+  private static async checkPermissionAndGetStudio({ userId, studioId, memberIds = [] }) {
+    if (!userId || !studioId) {
       throw new Error('Bad data');
     }
 
-    const team = await Team.findById(teamId)
-      .select('memberIds teamLeaderId')
+    const studio = await Studio.findById(studioId)
+      .select('memberIds studioTeacherId')
       .setOptions({ lean: true });
 
-    if (!team || team.memberIds.indexOf(userId) === -1) {
-      throw new Error('Team not found');
+    if (!studio || studio.memberIds.indexOf(userId) === -1) {
+      throw new Error('Studio not found');
     }
 
     for (const id of memberIds) {
-      if (team.memberIds.indexOf(id) === -1) {
+      if (studio.memberIds.indexOf(id) === -1) {
         throw new Error('Permission denied');
       }
     }
 
-    return team;
+    return studio;
   }
 }
 

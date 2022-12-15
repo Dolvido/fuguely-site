@@ -121,20 +121,20 @@ function LayoutWrapper({
                 options={[
                   {
                     text: 'Your Settings',
-                    href: `/your-settings?teamSlug=${store.currentTeam.slug}`,
-                    as: `/teams/${store.currentTeam.slug}/your-settings`,
+                    href: `/your-settings?studioSlug=${store.currentStudio.slug}`,
+                    as: `/studios/${store.currentStudio.slug}/your-settings`,
                     highlighterSlug: '/your-settings',
                   },
                   {
-                    text: 'Team Settings',
-                    href: `/team-settings?teamSlug=${store.currentTeam.slug}`,
-                    as: `/teams/${store.currentTeam.slug}/team-settings`,
-                    highlighterSlug: '/team-settings',
+                    text: 'Studio Settings',
+                    href: `/studio-settings?studioSlug=${store.currentStudio.slug}`,
+                    as: `/studios/${store.currentStudio.slug}/studio-settings`,
+                    highlighterSlug: '/studio-settings',
                   },
                   {
                     text: 'Billing',
-                    href: `/billing?teamSlug=${store.currentTeam.slug}`,
-                    as: `/teams/${store.currentTeam.slug}/billing`,
+                    href: `/billing?studioSlug=${store.currentStudio.slug}`,
+                    as: `/studios/${store.currentStudio.slug}/billing`,
                     highlighterSlug: '/billing',
                   },
                   {
@@ -174,7 +174,7 @@ function LayoutWrapper({
             <hr />
             <p />
             <p />
-            <DiscussionList store={store} team={store.currentTeam} isMobile={isMobile} />
+            <DiscussionList store={store} studio={store.currentStudio} isMobile={isMobile} />
           </Grid>
         ) : null}
 
@@ -191,14 +191,14 @@ type Props = {
   store?: Store;
   isMobile?: boolean;
   firstGridItem?: boolean;
-  teamRequired?: boolean;
+  studioRequired?: boolean;
 };
 
 class Layout extends React.Component<Props> {
   public render() {
-    const { children, isMobile, firstGridItem, store, teamRequired } = this.props;
+    const { children, isMobile, firstGridItem, store, studioRequired } = this.props;
 
-    const { currentUser, currentTeam } = store;
+    const { currentUser, currentStudio } = store;
 
     // console.log(this.props.store.currentUser.darkTheme);
 
@@ -206,7 +206,7 @@ class Layout extends React.Component<Props> {
 
     // console.log(isMobile);
 
-    // console.log(store, currentUser, currentTeam);
+    // console.log(store, currentUser, currentStudio);
 
     if (!currentUser) {
       return (
@@ -218,8 +218,8 @@ class Layout extends React.Component<Props> {
       );
     }
 
-    if (!currentTeam) {
-      if (teamRequired) {
+    if (!currentStudio) {
+      if (studioRequired) {
         return (
           <LayoutWrapper firstGridItem={firstGridItem} isMobile={isMobile} store={store}>
             <Grid
@@ -229,11 +229,11 @@ class Layout extends React.Component<Props> {
               style={{ padding: '0px 35px', overflow: 'auto', height: 'auto' }}
             >
               <div style={{ padding: '20px' }}>
-                Select existing team or create a new team.
+                Select existing studio or create a new studio.
                 <p />
-                <Link href="/create-team" as="/create-team">
+                <Link href="/create-studio" as="/create-studio">
                   <Button variant="contained" color="primary">
-                    Create new team
+                    Create new studio
                   </Button>
                 </Link>
               </div>
@@ -241,7 +241,7 @@ class Layout extends React.Component<Props> {
           </LayoutWrapper>
         );
       } else {
-        // console.log('team not required');
+        // console.log('studio not required');
         return (
           <LayoutWrapper firstGridItem={firstGridItem} isMobile={isMobile} store={store}>
             <Grid
@@ -266,7 +266,7 @@ class Layout extends React.Component<Props> {
           style={{ padding: '0px 35px', overflowY: 'auto', height: 'inherit' }}
         >
           <div>
-            {isMobile || store.currentUrl.includes('create-team') ? null : (
+            {isMobile || store.currentUrl.includes('create-studio') ? null : (
               <React.Fragment>
                 <LensIcon
                   style={{
@@ -285,7 +285,7 @@ class Layout extends React.Component<Props> {
                     fontWeight: 300,
                   }}
                 >
-                  Current team: <b>{store.currentTeam.name}</b>
+                  Current studio: <b>{store.currentStudio.name}</b>
                 </h4>
               </React.Fragment>
             )}

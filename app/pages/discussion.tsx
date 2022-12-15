@@ -18,22 +18,22 @@ import { Post } from 'lib/store/post';
 
 type Props = {
   store: Store;
-  teamSlug: string;
+  studioSlug: string;
   discussionSlug: string;
   isServer: boolean;
   isMobile: boolean;
   firstGridItem: boolean;
-  teamRequired: boolean;
+  studioRequired: boolean;
 };
 
 function DiscussionPageCompFunctional({
   store,
-  teamSlug,
+  studioSlug,
   discussionSlug,
   isServer,
   isMobile,
   firstGridItem,
-  teamRequired,
+  studioRequired,
 }: Props) {
   const [selectedPost, setSelectedPost] = useState<Post>(null);
   const [showMarkdownClicked, setShowMarkdownClicked] = useState<boolean>(false);
@@ -54,8 +54,8 @@ function DiscussionPageCompFunctional({
     if (!mounted.current) {
       console.log('useEffect 1 for DiscussionPageCompFunctional');
 
-      if (store.currentTeam && (!isServer || !discussionSlug)) {
-        store.currentTeam.loadDiscussions().catch((err) => notify(err));
+      if (store.currentStudio && (!isServer || !discussionSlug)) {
+        store.currentStudio.loadDiscussions().catch((err) => notify(err));
       }
 
       const discussion = getDiscussion(discussionSlug);
@@ -105,23 +105,23 @@ function DiscussionPageCompFunctional({
     };
   }, [discussionSlug]);
 
-  const { currentTeam } = store;
+  const { currentStudio } = store;
 
   const getDiscussion = (slug: string): Discussion => {
-    if (!currentTeam) {
+    if (!currentStudio) {
       return;
     }
 
-    if (!slug && currentTeam.discussions.length > 0) {
+    if (!slug && currentStudio.discussions.length > 0) {
       Router.replace(
-        `/discussion?teamSlug=${teamSlug}&discussionSlug=${currentTeam.orderedDiscussions[0].slug}`,
-        `/teams/${teamSlug}/discussions/${currentTeam.orderedDiscussions[0].slug}`,
+        `/discussion?studioSlug=${studioSlug}&discussionSlug=${currentStudio.orderedDiscussions[0].slug}`,
+        `/studios/${studioSlug}/discussions/${currentStudio.orderedDiscussions[0].slug}`,
       );
       return;
     }
 
-    if (slug && currentTeam) {
-      return currentTeam.getDiscussionBySlug(slug);
+    if (slug && currentStudio) {
+      return currentStudio.getDiscussionBySlug(slug);
     }
 
     return null;
@@ -213,18 +213,18 @@ function DiscussionPageCompFunctional({
     }
   };
 
-  if (!currentTeam || currentTeam.slug !== teamSlug) {
+  if (!currentStudio || currentStudio.slug !== studioSlug) {
     return (
       <Layout
         store={store}
         isMobile={isMobile}
         firstGridItem={firstGridItem}
-        teamRequired={teamRequired}
+        studioRequired={studioRequired}
       >
         <Head>
-          <title>No Team is found.</title>
+          <title>No Studio is found.</title>
         </Head>
-        <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>No Team is found.</div>
+        <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>No Studio is found.</div>
       </Layout>
     );
   }
@@ -232,13 +232,13 @@ function DiscussionPageCompFunctional({
   const discussion = getDiscussion(discussionSlug);
 
   if (!discussion) {
-    if (currentTeam.isLoadingDiscussions) {
+    if (currentStudio.isLoadingDiscussions) {
       return (
         <Layout
           store={store}
           isMobile={isMobile}
           firstGridItem={firstGridItem}
-          teamRequired={teamRequired}
+          studioRequired={studioRequired}
         >
           <Head>
             <title>Loading...</title>
@@ -254,7 +254,7 @@ function DiscussionPageCompFunctional({
           store={store}
           isMobile={isMobile}
           firstGridItem={firstGridItem}
-          teamRequired={teamRequired}
+          studioRequired={studioRequired}
         >
           <Head>
             <title>No Discussion is found.</title>
@@ -274,7 +274,7 @@ function DiscussionPageCompFunctional({
       store={store}
       isMobile={isMobile}
       firstGridItem={firstGridItem}
-      teamRequired={teamRequired}
+      studioRequired={studioRequired}
     >
       <Head>
         <title>{title}</title>

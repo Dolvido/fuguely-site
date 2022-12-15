@@ -47,9 +47,9 @@ class CreateDiscussionForm extends React.Component<Props, State> {
   }
   public render() {
     const { open, isMobile, store } = this.props;
-    const { currentTeam, currentUser } = store;
+    const { currentStudio, currentUser } = store;
 
-    const membersMinusCreator = Array.from(currentTeam.members.values()).filter(
+    const membersMinusCreator = Array.from(currentStudio.members.values()).filter(
       (user) => user._id !== currentUser._id,
     );
 
@@ -133,7 +133,7 @@ class CreateDiscussionForm extends React.Component<Props, State> {
               <PostEditor
                 content={this.state.content}
                 onChanged={this.onContentChanged}
-                members={Array.from(store.currentTeam.members.values())}
+                members={Array.from(store.currentStudio.members.values())}
                 store={store}
                 parentComponent="CDF"
               />
@@ -191,10 +191,10 @@ class CreateDiscussionForm extends React.Component<Props, State> {
     event.preventDefault();
 
     const { store } = this.props;
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
-    if (!currentTeam) {
-      notify('Team have not selected');
+    if (!currentStudio) {
+      notify('Studio have not selected');
       return;
     }
 
@@ -226,7 +226,7 @@ class CreateDiscussionForm extends React.Component<Props, State> {
     // console.log(notificationType);
 
     try {
-      const discussion = await currentTeam.addDiscussion({
+      const discussion = await currentStudio.addDiscussion({
         name,
         memberIds,
         notificationType,
@@ -243,7 +243,7 @@ class CreateDiscussionForm extends React.Component<Props, State> {
           discussionName: discussion.name,
           discussionLink: `${
             dev ? process.env.NEXT_PUBLIC_URL_APP : process.env.NEXT_PUBLIC_PRODUCTION_URL_APP
-          }/teams/${discussion.team.slug}/discussions/${discussion.slug}`,
+          }/studios/${discussion.studio.slug}/discussions/${discussion.slug}`,
           postContent: post.content,
           authorName: post.user.displayName,
           userIds: userIdsForLambda,
@@ -255,8 +255,8 @@ class CreateDiscussionForm extends React.Component<Props, State> {
       notify('You successfully added new Discussion.');
 
       Router.push(
-        `/discussion?teamSlug=${currentTeam.slug}&discussionSlug=${discussion.slug}`,
-        `/teams/${currentTeam.slug}/discussions/${discussion.slug}`,
+        `/discussion?studioSlug=${currentStudio.slug}&discussionSlug=${discussion.slug}`,
+        `/studios/${currentStudio.slug}/discussions/${discussion.slug}`,
       );
     } catch (error) {
       console.log(error);

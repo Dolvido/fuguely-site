@@ -1,8 +1,8 @@
 import * as express from 'express';
 
 import publicExpressRoutes from './public';
-import teamMemberExpressRoutes from './team-member';
-import teamLeaderApi from './team-leader';
+import studioMemberExpressRoutes from './studio-member';
+import studioTeacherApi from './studio-teacher';
 
 function handleError(err, _, res, __) {
   console.error(err.stack);
@@ -12,6 +12,6 @@ function handleError(err, _, res, __) {
 
 export default function api(server: express.Express) {
   server.use('/api/v1/public', publicExpressRoutes, handleError);
-  server.use('/api/v1/team-member', teamMemberExpressRoutes, handleError);
-  server.use('/api/v1/team-leader', teamLeaderApi, handleError);
+  server.use('/api/v1/studio-member', studioMemberExpressRoutes, handleError);
+  server.use('/api/v1/studio-teacher', studioTeacherApi, handleError);
 }

@@ -96,18 +96,18 @@ class DiscussionActionMenu extends React.Component<Props, State> {
 
   public handleCopyUrl = async (event) => {
     const { store } = this.props;
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
     const id = event.currentTarget.dataset.id;
     if (!id) {
       return;
     }
 
-    const selectedDiscussion = currentTeam.discussions.find((d) => d._id === id);
+    const selectedDiscussion = currentStudio.discussions.find((d) => d._id === id);
 
     const discussionUrl = `${
       dev ? process.env.NEXT_PUBLIC_URL_APP : process.env.NEXT_PUBLIC_PRODUCTION_URL_APP
-    }/teams/${currentTeam.slug}/discussions/${selectedDiscussion.slug}`;
+    }/studios/${currentStudio.slug}/discussions/${selectedDiscussion.slug}`;
 
     try {
       if (window.navigator) {
@@ -122,9 +122,9 @@ class DiscussionActionMenu extends React.Component<Props, State> {
   };
 
   public editDiscussion = (event) => {
-    const { currentTeam } = this.props.store;
-    if (!currentTeam) {
-      notify('You have not selected Team.');
+    const { currentStudio } = this.props.store;
+    if (!currentStudio) {
+      notify('You have not selected Studio.');
       return;
     }
 
@@ -133,15 +133,15 @@ class DiscussionActionMenu extends React.Component<Props, State> {
       return;
     }
 
-    const selectedDiscussion = currentTeam.discussions.find((d) => d._id === id);
+    const selectedDiscussion = currentStudio.discussions.find((d) => d._id === id);
 
     this.setState({ discussionFormOpen: true, selectedDiscussion });
   };
 
   public deleteDiscussion = async (event) => {
-    const { currentTeam } = this.props.store;
-    if (!currentTeam) {
-      notify('You have not selected Team.');
+    const { currentStudio } = this.props.store;
+    if (!currentStudio) {
+      notify('You have not selected Studio.');
       return;
     }
 
@@ -158,7 +158,7 @@ class DiscussionActionMenu extends React.Component<Props, State> {
         NProgress.start();
 
         try {
-          await currentTeam.deleteDiscussion(id);
+          await currentStudio.deleteDiscussion(id);
 
           notify('You successfully deleted Discussion.');
         } catch (error) {

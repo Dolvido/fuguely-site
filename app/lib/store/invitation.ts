@@ -1,6 +1,6 @@
 class Invitation {
   public _id: string;
-  public teamId: string;
+  public studioId: string;
   public email: string;
   public createdAt: Date;
 

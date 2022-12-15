@@ -10,8 +10,8 @@ import { useEffect } from 'react';
 
 import LoginButton from '../components/common/LoginButton';
 import Layout from '../components/layout';
-import { getTeamByTokenApiMethod } from '../lib/api/public';
-import { Team } from '../lib/store/team';
+import { getStudioByTokenApiMethod } from '../lib/api/public';
+import { Studio } from '../lib/store/studio';
 import { Store } from '../lib/store';
 import withAuth from '../lib/withAuth';
 
@@ -21,16 +21,16 @@ type Props = {
   store: Store;
   isMobile: boolean;
   firstGridItem: boolean;
-  teamRequired: boolean;
-  team: Team;
+  studioRequired: boolean;
+  studio: Studio;
   token: string;
 };
 
-function InvitationPageComp({ store, isMobile, firstGridItem, teamRequired, team, token }: Props) {
+function InvitationPageComp({ store, isMobile, firstGridItem, studioRequired, studio, token }: Props) {
   useEffect(() => {
     const user = store.currentUser;
 
-    if (user && team) {
+    if (user && studio) {
       Router.push(
         `${
           dev ? process.env.NEXT_PUBLIC_URL_API : process.env.NEXT_PUBLIC_PRODUCTION_URL_API
@@ -42,7 +42,7 @@ function InvitationPageComp({ store, isMobile, firstGridItem, teamRequired, team
     }
   }, []);
 
-  if (!team) {
+  if (!studio) {
     return <Error statusCode={404} />;
   }
 
@@ -56,28 +56,28 @@ function InvitationPageComp({ store, isMobile, firstGridItem, teamRequired, team
     <Layout
       store={store}
       isMobile={isMobile}
-      teamRequired={teamRequired}
+      studioRequired={studioRequired}
       firstGridItem={firstGridItem}
     >
       <Head>
-        <title>Invitation to {team.name}</title>
-        <meta name="description" content={`Invitation to join ${team.name}`} />
+        <title>Invitation to {studio.name}</title>
+        <meta name="description" content={`Invitation to join ${studio.name}`} />
       </Head>
       <div style={{ textAlign: 'center', margin: '0 20px' }}>
         <br />
         <Avatar
           src={`${
-            team.avatarUrl || 'https://storage.googleapis.com/async-await/default-user.png?v=1'
+            studio.avatarUrl || 'https://storage.googleapis.com/async-await/default-user.png?v=1'
           }`}
-          alt="Team logo"
+          alt="Studio logo"
           style={{
             verticalAlign: 'middle',
             display: 'inline-flex',
           }}
         />{' '}
-        <h2>{team.name}</h2>
+        <h2>{studio.name}</h2>
         <p>
-          Join <b>{team.name}</b> by logging in or signing up.
+          Join <b>{studio.name}</b> by logging in or signing up.
         </p>
         <br />
         <LoginButton invitationToken={token} />
@@ -94,9 +94,9 @@ InvitationPageComp.getInitialProps = async (ctx: NextPageContext) => {
   }
 
   try {
-    const { team } = await getTeamByTokenApiMethod(token as string, ctx.req);
+    const { studio } = await getStudioByTokenApiMethod(token as string, ctx.req);
 
-    return { team, token };
+    return { studio, token };
   } catch (error) {
     console.log(error);
     return {};

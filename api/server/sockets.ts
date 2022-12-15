@@ -51,14 +51,14 @@ function setupSockets({
         return;
       }
 
-      socket.on('joinTeamRoom', (teamId) => {
-        console.log(`    joinTeamRoom ${teamId}`);
-        socket.join(`teamRoom-${teamId}`);
+      socket.on('joinStudioRoom', (studioId) => {
+        console.log(`    joinStudioRoom ${studioId}`);
+        socket.join(`studioRoom-${studioId}`);
       });
 
-      socket.on('leaveTeamRoom', (teamId) => {
-        console.log(`** leaveTeamRoom ${teamId}`);
-        socket.leave(`teamRoom-${teamId}`);
+      socket.on('leaveStudioRoom', (studioId) => {
+        console.log(`** leaveStudioRoom ${studioId}`);
+        socket.leave(`studioRoom-${studioId}`);
       });
 
       socket.on('joinDiscussionRoom', (discussionId) => {
@@ -97,7 +97,7 @@ function discussionAdded({
   socketId?: string;
   discussion: DiscussionDocument;
 }) {
-  const roomName = `teamRoom-${discussion.teamId}`;
+  const roomName = `studioRoom-${discussion.studioId}`;
 
   const socket = getSocket(socketId);
   if (socket) {
@@ -112,7 +112,7 @@ function discussionEdited({
   socketId?: string;
   discussion: DiscussionDocument;
 }) {
-  const roomName = `teamRoom-${discussion.teamId}`;
+  const roomName = `studioRoom-${discussion.studioId}`;
   const socket = getSocket(socketId);
 
   if (socket) {
@@ -125,14 +125,14 @@ function discussionEdited({
 
 function discussionDeleted({
   socketId,
-  teamId,
+  studioId,
   id,
 }: {
   socketId?: string;
-  teamId: string;
+  studioId: string;
   id: string;
 }) {
-  const roomName = `teamRoom-${teamId}`;
+  const roomName = `studioRoom-${studioId}`;
   const socket = getSocket(socketId);
 
   if (socket) {

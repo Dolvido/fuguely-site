@@ -13,7 +13,7 @@ import { useRouter } from 'next/router';
 import {
   getSignedRequestForUploadApiMethod,
   uploadFileUsingSignedPutRequestApiMethod,
-} from '../lib/api/team-member';
+} from '../lib/api/studio-member';
 import notify from '../lib/notify';
 import { resizeImage } from '../lib/resizeImage';
 import { Store } from '../lib/store';
@@ -25,9 +25,9 @@ const styleGrid = {
   height: '100%',
 };
 
-type Props = { store: Store; isMobile: boolean; firstGridItem: boolean; teamRequired: boolean };
+type Props = { store: Store; isMobile: boolean; firstGridItem: boolean; studioRequired: boolean };
 
-function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
+function CreateStudio({ store, isMobile, firstGridItem, studioRequired }: Props) {
   const [newName, setNewName] = useState<string>('');
   const [newAvatarUrl, setNewAvatarUrl] = useState<string>(
     'https://storage.googleapis.com/async-await/default-user.png?v=1',
@@ -40,7 +40,7 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
     event.preventDefault();
 
     if (!newName) {
-      notify('Team name is required.');
+      notify('Studio name is required.');
       return;
     }
 
@@ -51,23 +51,23 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
 
       const defaultAvatarUrl = 'https://storage.googleapis.com/async-await/default-user.png?v=1';
 
-      const team = await store.addTeam({
+      const studio = await store.addStudio({
         name: newName,
         avatarUrl: defaultAvatarUrl,
       });
 
-      console.log(`Returned to client: ${team._id}, ${team.name}, ${team.slug}`);
+      console.log(`Returned to client: ${studio._id}, ${studio.name}, ${studio.slug}`);
 
       if (file == null) {
-        notify('You successfully created Team.<p />Redirecting...');
-        router.push(`/teams/${team.slug}/team-settings`);
+        notify('You successfully created Studio.<p />Redirecting...');
+        router.push(`/studios/${studio.slug}/studio-settings`);
         return;
       }
 
       const fileName = file.name;
       const fileType = file.type;
-      const bucket = process.env.NEXT_PUBLIC_BUCKET_FOR_TEAM_LOGOS;
-      const prefix = team.slug;
+      const bucket = process.env.NEXT_PUBLIC_BUCKET_FOR_STUDIO_LOGOS;
+      const prefix = studio.slug;
 
       const responseFromApiServerForUpload = await getSignedRequestForUploadApiMethod({
         fileName,
@@ -88,16 +88,16 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
 
       const uploadedAvatarUrl = responseFromApiServerForUpload.url;
 
-      await team.updateTheme({ name: team.name, avatarUrl: uploadedAvatarUrl });
+      await studio.updateTheme({ name: studio.name, avatarUrl: uploadedAvatarUrl });
 
       setNewName('');
       setNewAvatarUrl('https://storage.googleapis.com/async-await/default-user.png?v=1');
 
       (document.getElementById('upload-file') as HTMLFormElement).value = '';
 
-      notify('You successfully created Team. Redirecting ...');
+      notify('You successfully created Studio. Redirecting ...');
 
-      router.push(`/teams/${team.slug}/team-settings`);
+      router.push(`/studios/${studio.slug}/studio-settings`);
     } catch (error) {
       console.log(error);
       notify(error);
@@ -106,7 +106,7 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
     }
   };
 
-  const previewTeamLogo = () => {
+  const previewStudioLogo = () => {
     const file = (document.getElementById('upload-file') as HTMLFormElement).files[0];
     if (!file) {
       return;
@@ -125,30 +125,30 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
     <Layout
       store={store}
       isMobile={isMobile}
-      teamRequired={teamRequired}
+      studioRequired={studioRequired}
       firstGridItem={firstGridItem}
     >
       <Head>
-        <title>Create Team</title>
-        <meta name="description" content="Create a new Team at SaaS Boilerplate" />
+        <title>Create Studio</title>
+        <meta name="description" content="Create a new Studio at SaaS Boilerplate" />
       </Head>
       <div style={{ padding: '0px', fontSize: '14px', height: '100%' }}>
         <Grid container style={styleGrid}>
           <Grid item sm={12} xs={12} style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-            <h3>Create team</h3>
+            <h3>Create studio</h3>
             <p />
             <form onSubmit={onSubmit}>
-              <h4>Team name</h4>
+              <h4>Studio name</h4>
               <TextField
                 value={newName}
-                label="Type your team's name."
-                helperText="Team name as seen by your team members."
+                label="Type your studio's name."
+                helperText="Studio name as seen by your studio members."
                 onChange={(event) => {
                   setNewName(event.target.value);
                 }}
               />
               <p />
-              <h4 style={{ marginTop: '40px' }}>Team logo (optional)</h4>
+              <h4 style={{ marginTop: '40px' }}>Studio logo (optional)</h4>
               <Avatar
                 src={newAvatarUrl}
                 style={{
@@ -161,7 +161,7 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
               />
               <label htmlFor="upload-file">
                 <Button variant="outlined" color="primary" component="span">
-                  Select team logo
+                  Select studio logo
                 </Button>
               </label>
               <input
@@ -170,13 +170,13 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
                 id="upload-file"
                 type="file"
                 style={{ display: 'none' }}
-                onChange={previewTeamLogo}
+                onChange={previewStudioLogo}
               />
               <p />
               <br />
               <br />
               <Button variant="contained" color="primary" type="submit" disabled={disabled}>
-                Create new team
+                Create new studio
               </Button>
             </form>
           </Grid>
@@ -187,4 +187,4 @@ function CreateTeam({ store, isMobile, firstGridItem, teamRequired }: Props) {
   );
 }
 
-export default withAuth(inject('store')(observer(CreateTeam)));
+export default withAuth(inject('store')(observer(CreateStudio)));

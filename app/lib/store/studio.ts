@@ -4,23 +4,23 @@ import {
   cancelSubscriptionApiMethod,
   inviteMemberApiMethod,
   removeMemberApiMethod,
-  updateTeamApiMethod,
-} from '../api/team-leader';
+  updateStudioApiMethod,
+} from '../api/studio-teacher';
 import {
   addDiscussionApiMethod,
   deleteDiscussionApiMethod,
   getDiscussionListApiMethod,
-} from '../api/team-member';
+} from '../api/studio-member';
 import { Store } from './index';
 import { User } from './user';
 import { Invitation } from './invitation';
 import { Discussion } from './discussion';
 
-class Team {
+class Studio {
   public store: Store;
 
   public _id: string;
-  public teamLeaderId: string;
+  public studioTeacherId: string;
 
   public name: string;
   public slug: string;
@@ -76,7 +76,7 @@ class Team {
     });
 
     this._id = params._id;
-    this.teamLeaderId = params.teamLeaderId;
+    this.studioTeacherId = params.studioTeacherId;
     this.slug = params.slug;
     this.name = params.name;
     this.avatarUrl = params.avatarUrl;
@@ -117,8 +117,8 @@ class Team {
 
   public async updateTheme({ name, avatarUrl }: { name: string; avatarUrl: string }) {
     try {
-      const { slug } = await updateTeamApiMethod({
-        teamId: this._id,
+      const { slug } = await updateStudioApiMethod({
+        studioId: this._id,
         name,
         avatarUrl,
       });
@@ -136,7 +136,7 @@ class Team {
 
   public async inviteMember(email: string) {
     try {
-      const { newInvitation } = await inviteMemberApiMethod({ teamId: this._id, email });
+      const { newInvitation } = await inviteMemberApiMethod({ studioId: this._id, email });
 
       runInAction(() => {
         this.invitations.set(newInvitation._id, new Invitation(newInvitation));
@@ -149,7 +149,7 @@ class Team {
 
   public async removeMember(userId: string) {
     try {
-      await removeMemberApiMethod({ teamId: this._id, userId });
+      await removeMemberApiMethod({ studioId: this._id, userId });
 
       runInAction(() => {
         this.members.delete(userId);
@@ -173,7 +173,7 @@ class Team {
 
   public setInitialDiscussions(discussions) {
     const discussionObjs = discussions.map(
-      (d) => new Discussion({ team: this, store: this.store, ...d }),
+      (d) => new Discussion({ studio: this, store: this.store, ...d }),
     );
 
     this.discussions.replace(discussionObjs);
@@ -196,7 +196,7 @@ class Team {
 
     try {
       const { discussions = [] } = await getDiscussionListApiMethod({
-        teamId: this._id,
+        studioId: this._id,
       });
       const newList: Discussion[] = [];
 
@@ -207,7 +207,7 @@ class Team {
             disObj.changeLocalCache(d);
             newList.push(disObj);
           } else {
-            newList.push(new Discussion({ team: this, store: this.store, ...d }));
+            newList.push(new Discussion({ studio: this, store: this.store, ...d }));
           }
         });
 
@@ -227,7 +227,7 @@ class Team {
 
   public async addDiscussion(data): Promise<Discussion> {
     const { discussion } = await addDiscussionApiMethod({
-      teamId: this._id,
+      studioId: this._id,
       socketId: (this.store.socket && this.store.socket.id) || null,
       ...data,
     });
@@ -241,7 +241,7 @@ class Team {
   }
 
   public addDiscussionToLocalCache(data): Discussion {
-    const obj = new Discussion({ team: this, store: this.store, ...data });
+    const obj = new Discussion({ studio: this, store: this.store, ...data });
 
     if (obj.memberIds.includes(this.store.currentUser._id)) {
       this.discussions.push(obj);
@@ -269,11 +269,11 @@ class Team {
           const d = this.discussions[0];
 
           Router.push(
-            `/discussion?teamSlug=${this.slug}&discussionSlug=${d.slug}`,
-            `/teams/${this.slug}/discussions/${d.slug}`,
+            `/discussion?studioSlug=${this.slug}&discussionSlug=${d.slug}`,
+            `/studios/${this.slug}/discussions/${d.slug}`,
           );
         } else {
-          Router.push(`/discussion?teamSlug=${this.slug}`, `/teams/${this.slug}/discussions`);
+          Router.push(`/discussion?studioSlug=${this.slug}`, `/studios/${this.slug}/discussions`);
         }
       }
     });
@@ -288,9 +288,9 @@ class Team {
     return this.discussions.find((d) => d.slug === slug);
   }
 
-  public async cancelSubscription({ teamId }: { teamId: string }) {
+  public async cancelSubscription({ studioId }: { studioId: string }) {
     try {
-      const { isSubscriptionActive } = await cancelSubscriptionApiMethod({ teamId });
+      const { isSubscriptionActive } = await cancelSubscriptionApiMethod({ studioId });
 
       runInAction(() => {
         this.isSubscriptionActive = isSubscriptionActive;
@@ -301,18 +301,18 @@ class Team {
     }
   }
 
-  public async checkIfTeamLeaderMustBeCustomer() {
-    let ifTeamLeaderMustBeCustomerOnClient: boolean;
+  public async checkIfStudioTeacherMustBeCustomer() {
+    let ifStudioTeacherMustBeCustomerOnClient: boolean;
 
     if (this && this.memberIds.length < 2) {
-      ifTeamLeaderMustBeCustomerOnClient = false;
+      ifStudioTeacherMustBeCustomerOnClient = false;
     } else if (this && this.memberIds.length >= 2 && this.isSubscriptionActive) {
-      ifTeamLeaderMustBeCustomerOnClient = false;
+      ifStudioTeacherMustBeCustomerOnClient = false;
     } else if (this && this.memberIds.length >= 2 && !this.isSubscriptionActive) {
-      ifTeamLeaderMustBeCustomerOnClient = true;
+      ifStudioTeacherMustBeCustomerOnClient = true;
     }
 
-    return ifTeamLeaderMustBeCustomerOnClient;
+    return ifStudioTeacherMustBeCustomerOnClient;
   }
 
   get orderedDiscussions() {
@@ -320,4 +320,4 @@ class Team {
   }
 }
 
-export { Team };
+export { Studio };

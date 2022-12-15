@@ -47,7 +47,7 @@ export async function insertTemplates() {
           <a href="https://async-labs.com" target="blank"> Async Labs</a>, and
           <a href="https://workinbiotech.com" target="blank"> Work in biotech</a>.
         </p>
-        Kelly & Timur, Team Async Labs
+        Kelly & Timur, Studio Async Labs
       `,
     },
     {
@@ -58,8 +58,8 @@ export async function insertTemplates() {
     },
     {
       name: 'invitation',
-      subject: 'You are invited to join a team at saas-app.async-await.com',
-      message: `You've been invited to join <b><%= teamName%></b>.
+      subject: 'You are invited to join a studio at saas-app.async-await.com',
+      message: `You've been invited to join <b><%= studioName%></b>.
         <br/>Click here to accept the invitation: <%= invitationURL%>
       `,
     },

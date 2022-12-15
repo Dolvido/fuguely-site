@@ -64,13 +64,13 @@ class EditDiscussionForm extends React.Component<Props, State> {
 
   public render() {
     const { open, store } = this.props;
-    const { currentTeam, currentUser } = store;
+    const { currentStudio, currentUser } = store;
 
-    const membersMinusCreator = Array.from(currentTeam.members.values()).filter(
+    const membersMinusCreator = Array.from(currentStudio.members.values()).filter(
       (user) => user._id !== currentUser._id,
     );
 
-    // console.log(currentTeam.members);
+    // console.log(currentStudio.members);
 
     return (
       <Dialog onClose={this.handleClose} aria-labelledby="simple-dialog-title" open={open}>
@@ -152,11 +152,11 @@ class EditDiscussionForm extends React.Component<Props, State> {
     event.preventDefault();
 
     const { discussion, store } = this.props;
-    const { currentTeam } = store;
+    const { currentStudio } = store;
     const { notificationType } = this.state;
 
-    if (!currentTeam) {
-      notify('Team have not selected');
+    if (!currentStudio) {
+      notify('Studio have not selected');
       return;
     }
 

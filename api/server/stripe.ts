@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 import * as express from 'express';
 import Stripe from 'stripe';
 
-import Team from './models/Team';
+import Studio from './models/Studio';
 import User from './models/User';
 
 import logger from './logger';
@@ -18,16 +18,16 @@ const stripeInstance = new Stripe(
 
 function createSession({
   userId,
-  teamId,
-  teamSlug,
+  studioId,
+  studioSlug,
   customerId,
   subscriptionId,
   userEmail,
   mode,
 }: {
   userId: string;
-  teamId: string;
-  teamSlug: string;
+  studioId: string;
+  studioSlug: string;
   customerId: string;
   subscriptionId: string;
   userEmail: string;
@@ -43,8 +43,8 @@ function createSession({
     }/stripe/checkout-completed/{CHECKOUT_SESSION_ID}`,
     cancel_url: `${
       dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP
-    }/teams/${teamSlug}/billing?redirectMessage=Checkout%20canceled`,
-    metadata: { userId, teamId },
+    }/studios/${studioSlug}/billing?redirectMessage=Checkout%20canceled`,
+    metadata: { userId, studioId },
   };
 
   console.log(process.env.STRIPE_TEST_SECRETKEY, process.env.STRIPE_TEST_PRICEID);
@@ -124,7 +124,7 @@ function stripeWebhookAndCheckoutCallback({ server }: { server: express.Applicat
           const { subscription } = event.data.object;
           logger.debug(JSON.stringify(subscription));
 
-          await Team.cancelSubscriptionAfterFailedPayment({
+          await Studio.cancelSubscriptionAfterFailedPayment({
             subscriptionId: JSON.stringify(subscription),
           });
         }
@@ -141,7 +141,7 @@ function stripeWebhookAndCheckoutCallback({ server }: { server: express.Applicat
     const { sessionId } = req.params;
 
     const session = await retrieveSession({ sessionId });
-    if (!session || !session.metadata || !session.metadata.userId || !session.metadata.teamId) {
+    if (!session || !session.metadata || !session.metadata.userId || !session.metadata.studioId) {
       throw new Error('Wrong session.');
     }
 
@@ -150,20 +150,20 @@ function stripeWebhookAndCheckoutCallback({ server }: { server: express.Applicat
       '_id stripeCustomer email displayName isSubscriptionActive stripeSubscription',
     ).setOptions({ lean: true });
 
-    const team = await Team.findById(
-      session.metadata.teamId,
-      'isSubscriptionActive stripeSubscription teamLeaderId slug',
+    const studio = await Studio.findById(
+      session.metadata.studioId,
+      'isSubscriptionActive stripeSubscription studioTeacherId slug',
     ).setOptions({ lean: true });
 
     if (!user) {
       throw new Error('User not found.');
     }
 
-    if (!team) {
-      throw new Error('Team not found.');
+    if (!studio) {
+      throw new Error('Studio not found.');
     }
 
-    if (team.teamLeaderId !== user._id.toString()) {
+    if (studio.studioTeacherId !== user._id.toString()) {
       throw new Error('Permission denied');
     }
 
@@ -178,28 +178,28 @@ function stripeWebhookAndCheckoutCallback({ server }: { server: express.Applicat
           });
         }
 
-        if (team.stripeSubscription) {
-          await updateSubscription(team.stripeSubscription.id, { default_payment_method: pm.id });
+        if (studio.stripeSubscription) {
+          await updateSubscription(studio.stripeSubscription.id, { default_payment_method: pm.id });
         }
 
         await User.changeStripeCard({ session, user });
       } else if (session.mode === 'subscription') {
         await User.saveStripeCustomerAndCard({ session, user });
-        await Team.subscribeTeam({ session, team });
+        await Studio.subscribeStudio({ session, studio });
         await User.getListOfInvoicesForCustomer({ userId: user._id });
       } else {
         throw new Error('Wrong session.');
       }
 
       res.redirect(
-        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/teams/${team.slug}/billing`,
+        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/studios/${studio.slug}/billing`,
       );
     } catch (err) {
       console.error(err);
 
       res.redirect(
-        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/teams/${
-          team.slug
+        `${dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP}/studios/${
+          studio.slug
         }/billing?redirectMessage=${err.message || err.toString()}`,
       );
     }

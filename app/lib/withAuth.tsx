@@ -65,12 +65,12 @@ export default function withAuth(Component, { loginRequired = true, logoutRequir
       let redirectUrl = '/login';
       let asUrl = '/login';
       if (user) {
-        if (!user.defaultTeamSlug) {
-          redirectUrl = '/create-team';
-          asUrl = '/create-team';
+        if (!user.defaultStudioSlug) {
+          redirectUrl = '/create-studio';
+          asUrl = '/create-studio';
         } else {
-          redirectUrl = `/your-settings?teamSlug=${user.defaultTeamSlug}`;
-          asUrl = `/teams/${user.defaultTeamSlug}/your-settings`;
+          redirectUrl = `/your-settings?studioSlug=${user.defaultStudioSlug}`;
+          asUrl = `/studios/${user.defaultStudioSlug}/your-settings`;
         }
       }
 

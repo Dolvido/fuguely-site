@@ -3,7 +3,7 @@ import * as express from 'express';
 import { signRequestForUpload } from '../aws-s3';
 
 import User from '../models/User';
-import Team from '../models/Team';
+import Studio from '../models/Studio';
 import Invitation from '../models/Invitation';
 import Discussion from '../models/Discussion';
 import Post from '../models/Post';
@@ -20,7 +20,7 @@ import {
 const router = express.Router();
 
 router.use((req, res, next) => {
-  console.log('team member API', req.path);
+  console.log('studio member API', req.path);
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
@@ -77,7 +77,7 @@ router.post('/user/toggle-theme', async (req: any, res, next) => {
   }
 });
 
-async function loadDiscussionsData(team, userId, body) {
+async function loadDiscussionsData(studio, userId, body) {
   const { discussionSlug } = body;
 
   if (!discussionSlug) {
@@ -86,7 +86,7 @@ async function loadDiscussionsData(team, userId, body) {
 
   const { discussions } = await Discussion.getList({
     userId,
-    teamId: team._id,
+    studioId: studio._id,
   });
 
   for (const discussion of discussions) {
@@ -105,23 +105,23 @@ async function loadDiscussionsData(team, userId, body) {
   return discussions;
 }
 
-async function loadTeamData(team, userId, body) {
-  const initialMembers = await User.getMembersForTeam({
+async function loadStudioData(studio, userId, body) {
+  const initialMembers = await User.getMembersForStudio({
     userId,
-    teamId: team._id,
+    studioId: studio._id,
   });
 
   let initialInvitations = [];
-  if (userId === team.teamLeaderId) {
-    initialInvitations = await Invitation.getTeamInvitations({
+  if (userId === studio.studioTeacherId) {
+    initialInvitations = await Invitation.getStudioInvitations({
       userId,
-      teamId: team._id,
+      studioId: studio._id,
     });
   }
 
   console.log(`initialMembers:${initialMembers}`);
 
-  const initialDiscussions = await loadDiscussionsData(team, userId, body);
+  const initialDiscussions = await loadDiscussionsData(studio, userId, body);
 
   const data: any = { initialMembers, initialInvitations, initialDiscussions };
 
@@ -132,45 +132,45 @@ async function loadTeamData(team, userId, body) {
 
 router.post('/get-initial-data', async (req: any, res, next) => {
   try {
-    const teams = await Team.getAllTeamsForUser(req.user.id);
+    const studios = await Studio.getAllStudiosForUser(req.user.id);
 
-    let selectedTeamSlug = req.body.teamSlug;
-    if (!selectedTeamSlug && teams && teams.length > 0) {
-      selectedTeamSlug = teams[0].slug;
+    let selectedStudioSlug = req.body.studioSlug;
+    if (!selectedStudioSlug && studios && studios.length > 0) {
+      selectedStudioSlug = studios[0].slug;
     }
 
-    for (const team of teams) {
-      if (team.slug === selectedTeamSlug) {
-        Object.assign(team, await loadTeamData(team, req.user.id, req.body));
+    for (const studio of studios) {
+      if (studio.slug === selectedStudioSlug) {
+        Object.assign(studio, await loadStudioData(studio, req.user.id, req.body));
         break;
       }
     }
 
-    // console.log(teams.length, teams);
+    // console.log(studios.length, studios);
 
-    res.json({ teams });
+    res.json({ studios });
   } catch (err) {
     next(err);
   }
 });
 
-// router.get('/teams', async (req, res, next) => {
+// router.get('/studios', async (req, res, next) => {
 //   try {
-//     const teams = await Team.getAllTeamsForUser(req.user.id);
+//     const studios = await Studio.getAllStudiosForUser(req.user.id);
 
-//     console.log(teams);
+//     console.log(studios);
 
-//     res.json({ teams });
+//     res.json({ studios });
 //   } catch (err) {
 //     next(err);
 //   }
 // });
 
-router.get('/teams/get-members', async (req: any, res, next) => {
+router.get('/studios/get-members', async (req: any, res, next) => {
   try {
-    const users = await User.getMembersForTeam({
+    const users = await User.getMembersForStudio({
       userId: req.user.id,
-      teamId: req.query.teamId as string,
+      studioId: req.query.studioId as string,
     });
 
     res.json({ users });
@@ -181,12 +181,12 @@ router.get('/teams/get-members', async (req: any, res, next) => {
 
 router.post('/discussions/add', async (req: any, res, next) => {
   try {
-    const { name, teamId, memberIds = [], socketId, notificationType } = req.body;
+    const { name, studioId, memberIds = [], socketId, notificationType } = req.body;
 
     const discussion = await Discussion.add({
       userId: req.user.id,
       name,
-      teamId,
+      studioId,
       memberIds,
       notificationType,
     });
@@ -223,9 +223,9 @@ router.post('/discussions/delete', async (req: any, res, next) => {
   try {
     const { id, socketId } = req.body;
 
-    const { teamId } = await Discussion.delete({ userId: req.user.id, id });
+    const { studioId } = await Discussion.delete({ userId: req.user.id, id });
 
-    discussionDeleted({ socketId, teamId, id });
+    discussionDeleted({ socketId, studioId, id });
 
     res.json({ done: 1 });
   } catch (err) {
@@ -237,7 +237,7 @@ router.get('/discussions/list', async (req: any, res, next) => {
   try {
     const { discussions } = await Discussion.getList({
       userId: req.user.id,
-      teamId: req.query.teamId as string,
+      studioId: req.query.studioId as string,
     });
 
     res.json({ discussions });

@@ -1,6 +1,6 @@
 import { action, computed, observable, runInAction, makeObservable } from 'mobx';
 
-import { editPostApiMethod } from '../api/team-member';
+import { editPostApiMethod } from '../api/studio-member';
 
 import { Store } from './index';
 import { User } from './user';
@@ -74,6 +74,6 @@ export class Post {
   }
 
   get user(): User {
-    return this.discussion.team.members.get(this.createdUserId) || null;
+    return this.discussion.studio.members.get(this.createdUserId) || null;
   }
 }

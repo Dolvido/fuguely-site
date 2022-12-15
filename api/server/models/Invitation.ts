@@ -2,11 +2,11 @@ import * as mongoose from 'mongoose';
 
 import sendEmail from '../aws-ses';
 import getEmailTemplate from './EmailTemplate';
-import Team from './Team';
+import Studio from './Studio';
 import User, { UserDocument } from './User';
 
 const mongoSchema = new mongoose.Schema({
-  teamId: {
+  studioId: {
     type: String,
     required: true,
   },
@@ -27,10 +27,10 @@ const mongoSchema = new mongoose.Schema({
   },
 });
 
-mongoSchema.index({ teamId: 1, email: 1 }, { unique: true });
+mongoSchema.index({ studioId: 1, email: 1 }, { unique: true });
 
 interface InvitationDocument extends mongoose.Document {
-  teamId: string;
+  studioId: string;
   email: string;
   createdAt: Date;
   token: string;
@@ -39,17 +39,17 @@ interface InvitationDocument extends mongoose.Document {
 interface InvitationModel extends mongoose.Model<InvitationDocument> {
   add({
     userId,
-    teamId,
+    studioId,
     email,
   }: {
     userId: string;
-    teamId: string;
+    studioId: string;
     email: string;
   }): InvitationDocument;
 
-  getTeamInvitations({ userId, teamId }: { userId: string; teamId: string });
-  getTeamByToken({ token }: { token: string });
-  addUserToTeam({ token, user }: { token: string; user: UserDocument });
+  getStudioInvitations({ userId, studioId }: { userId: string; studioId: string });
+  getStudioByToken({ token }: { token: string });
+  addUserToStudio({ token, user }: { token: string; user: UserDocument });
 }
 
 function generateToken() {
@@ -60,24 +60,24 @@ function generateToken() {
 }
 
 class InvitationClass extends mongoose.Model {
-  public static async add({ userId, teamId, email }) {
-    if (!teamId || !email) {
+  public static async add({ userId, studioId, email }) {
+    if (!studioId || !email) {
       throw new Error('Bad data');
     }
 
-    const team = await Team.findById(teamId).setOptions({ lean: true });
-    if (!team || team.teamLeaderId !== userId) {
-      throw new Error('Team does not exist or you have no permission');
+    const studio = await Studio.findById(studioId).setOptions({ lean: true });
+    if (!studio || studio.studioTeacherId !== userId) {
+      throw new Error('Studio does not exist or you have no permission');
     }
 
     const registeredUser = await User.findOne({ email }).setOptions({ lean: true });
 
-    if (registeredUser && team.memberIds.includes(registeredUser._id.toString())) {
-      throw new Error('This user is already Team Member.');
+    if (registeredUser && studio.memberIds.includes(registeredUser._id.toString())) {
+      throw new Error('This user is already Studio Member.');
     }
 
     let token;
-    const invitation = await this.findOne({ teamId, email })
+    const invitation = await this.findOne({ studioId, email })
       .select('token')
       .setOptions({ lean: true });
 
@@ -90,7 +90,7 @@ class InvitationClass extends mongoose.Model {
       }
 
       await this.create({
-        teamId,
+        studioId,
         email,
         token,
       });
@@ -99,7 +99,7 @@ class InvitationClass extends mongoose.Model {
     const dev = process.env.NODE_ENV !== 'production';
 
     const emailTemplate = await getEmailTemplate('invitation', {
-      teamName: team.name,
+      studioName: studio.name,
       invitationURL: `${
         dev ? process.env.URL_APP : process.env.PRODUCTION_URL_APP
       }/invitation?token=${token}`,
@@ -120,22 +120,22 @@ class InvitationClass extends mongoose.Model {
       console.log('Email sending error:', err);
     }
 
-    return await this.findOne({ teamId, email }).setOptions({ lean: true });
+    return await this.findOne({ studioId, email }).setOptions({ lean: true });
   }
 
-  public static async getTeamInvitations({ userId, teamId }) {
-    const team = await Team.findOne({ _id: teamId })
-      .select('teamLeaderId')
+  public static async getStudioInvitations({ userId, studioId }) {
+    const studio = await Studio.findOne({ _id: studioId })
+      .select('studioTeacherId')
       .setOptions({ lean: true });
 
-    if (userId !== team.teamLeaderId) {
+    if (userId !== studio.studioTeacherId) {
       throw new Error('You have no permission.');
     }
 
-    return this.find({ teamId }).select('email').setOptions({ lean: true });
+    return this.find({ studioId }).select('email').setOptions({ lean: true });
   }
 
-  public static async getTeamByToken({ token }) {
+  public static async getStudioByToken({ token }) {
     if (!token) {
       throw new Error('Bad data');
     }
@@ -146,18 +146,18 @@ class InvitationClass extends mongoose.Model {
       throw new Error('Invitation not found');
     }
 
-    const team = await Team.findById(invitation.teamId)
+    const studio = await Studio.findById(invitation.studioId)
       .select('name slug avatarUrl memberIds')
       .setOptions({ lean: true });
 
-    if (!team) {
-      throw new Error('Team does not exist');
+    if (!studio) {
+      throw new Error('Studio does not exist');
     }
 
-    return team;
+    return studio;
   }
 
-  public static async addUserToTeam({ token, user }) {
+  public static async addUserToStudio({ token, user }) {
     if (!token || !user) {
       throw new Error('Bad data');
     }
@@ -170,23 +170,23 @@ class InvitationClass extends mongoose.Model {
 
     await this.deleteOne({ token });
 
-    const team = await Team.findById(invitation.teamId)
-      .select('memberIds slug teamLeaderId')
+    const studio = await Studio.findById(invitation.studioId)
+      .select('memberIds slug studioTeacherId')
       .setOptions({ lean: true });
 
-    if (!team) {
-      throw new Error('Team does not exist');
+    if (!studio) {
+      throw new Error('Studio does not exist');
     }
 
-    if (team && !team.memberIds.includes(user._id)) {
-      await Team.updateOne({ _id: team._id }, { $addToSet: { memberIds: user._id } });
+    if (studio && !studio.memberIds.includes(user._id)) {
+      await Studio.updateOne({ _id: studio._id }, { $addToSet: { memberIds: user._id } });
 
-      if (user._id !== team.teamLeaderId) {
-        await User.findByIdAndUpdate(user._id, { $set: { defaultTeamSlug: team.slug } });
+      if (user._id !== studio.studioTeacherId) {
+        await User.findByIdAndUpdate(user._id, { $set: { defaultStudioSlug: studio.slug } });
       }
     }
 
-    return team.slug;
+    return studio.slug;
   }
 }
 

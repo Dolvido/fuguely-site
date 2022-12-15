@@ -14,7 +14,7 @@ import Layout from '../components/layout';
 import notify from '../lib/notify';
 import { Store } from '../lib/store';
 import withAuth from '../lib/withAuth';
-import { fetchCheckoutSessionApiMethod } from '../lib/api/team-leader';
+import { fetchCheckoutSessionApiMethod } from '../lib/api/studio-teacher';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -28,8 +28,8 @@ type Props = {
   store: Store;
   isMobile: boolean;
   firstGridItem: boolean;
-  teamRequired: boolean;
-  teamSlug: string;
+  studioRequired: boolean;
+  studioSlug: string;
   redirectMessage?: string;
 };
 
@@ -37,8 +37,8 @@ function Billing({
   store,
   isMobile,
   firstGridItem,
-  teamRequired,
-  teamSlug,
+  studioRequired,
+  studioSlug,
   redirectMessage,
 }: Props) {
   const [disabled, setDisabled] = useState<boolean>(false);
@@ -52,12 +52,12 @@ function Billing({
 
   const handleCheckoutClick = async (mode: 'subscription' | 'setup') => {
     try {
-      const { currentTeam } = store;
+      const { currentStudio } = store;
 
       NProgress.start();
       setDisabled(true);
 
-      const { sessionId } = await fetchCheckoutSessionApiMethod({ mode, teamId: currentTeam._id });
+      const { sessionId } = await fetchCheckoutSessionApiMethod({ mode, studioId: currentStudio._id });
 
       // console.log(process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLEKEY, sessionId);
 
@@ -79,13 +79,13 @@ function Billing({
   };
 
   const cancelSubscriptionOnClick = async () => {
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
     NProgress.start();
     setDisabled(true);
 
     try {
-      await currentTeam.cancelSubscription({ teamId: currentTeam._id });
+      await currentStudio.cancelSubscription({ studioId: currentStudio._id });
       notify('Success!');
     } catch (err) {
       notify(err);
@@ -142,7 +142,7 @@ function Billing({
               <p>Your history of payments:</p>
               <li>
                 ${invoice.amount_paid / 100} was paid on{' '}
-                {moment(invoice.created * 1000).format('MMM Do YYYY')} for Team '{invoice.teamName}'
+                {moment(invoice.created * 1000).format('MMM Do YYYY')} for Studio '{invoice.studioName}'
                 -{' '}
                 <a href={invoice.hosted_invoice_url} target="_blank" rel="noopener noreferrer">
                   See invoice
@@ -175,18 +175,18 @@ function Billing({
   };
 
   const renderSubscriptionButton = () => {
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
     let subscriptionDate;
     let billingDay;
-    if (currentTeam && currentTeam.stripeSubscription) {
-      subscriptionDate = moment(currentTeam.stripeSubscription.billing_cycle_anchor * 1000).format(
+    if (currentStudio && currentStudio.stripeSubscription) {
+      subscriptionDate = moment(currentStudio.stripeSubscription.billing_cycle_anchor * 1000).format(
         'MMM Do YYYY',
       );
-      billingDay = moment(currentTeam.stripeSubscription.billing_cycle_anchor * 1000).format('Do');
+      billingDay = moment(currentStudio.stripeSubscription.billing_cycle_anchor * 1000).format('Do');
     }
 
-    if (currentTeam && !currentTeam.isSubscriptionActive && currentTeam.isPaymentFailed) {
+    if (currentStudio && !currentStudio.isSubscriptionActive && currentStudio.isPaymentFailed) {
       return (
         <>
           <p>You are not a paying customer.</p>
@@ -200,12 +200,12 @@ function Billing({
           </Button>
           <p />
           <p>
-            Team was automatically unsubscribed due to failed payment. You will be prompt to update
-            card information if you choose to re-subscribe Team.
+            Studio was automatically unsubscribed due to failed payment. You will be prompt to update
+            card information if you choose to re-subscribe Studio.
           </p>
         </>
       );
-    } else if (currentTeam && !currentTeam.isSubscriptionActive && !currentTeam.isPaymentFailed) {
+    } else if (currentStudio && !currentStudio.isSubscriptionActive && !currentStudio.isPaymentFailed) {
       return (
         <React.Fragment>
           <p>You are not a paying customer.</p>
@@ -231,7 +231,7 @@ function Billing({
             <DoneIcon color="action" style={{ verticalAlign: 'text-bottom' }} /> Subscription is
             active.
             <p>
-              You subscribed <b>{currentTeam.name}</b> on <b>{subscriptionDate}</b>.
+              You subscribed <b>{currentStudio.name}</b> on <b>{subscriptionDate}</b>.
             </p>
             <p>
               You will be billed $50 on <b>{billingDay} day</b> of each month unless you cancel
@@ -245,7 +245,7 @@ function Billing({
             onClick={cancelSubscriptionOnClick}
             disabled={disabled}
           >
-            Unsubscribe Team
+            Unsubscribe Studio
           </Button>
           <br />
         </React.Fragment>
@@ -253,39 +253,39 @@ function Billing({
     }
   };
 
-  const { currentTeam, currentUser } = store;
-  const isTeamLeader = currentTeam && currentUser && currentUser._id === currentTeam.teamLeaderId;
+  const { currentStudio, currentUser } = store;
+  const isStudioTeacher = currentStudio && currentUser && currentUser._id === currentStudio.studioTeacherId;
 
-  if (!currentTeam || currentTeam.slug !== teamSlug) {
+  if (!currentStudio || currentStudio.slug !== studioSlug) {
     return (
       <Layout
         store={store}
         isMobile={isMobile}
-        teamRequired={teamRequired}
+        studioRequired={studioRequired}
         firstGridItem={firstGridItem}
       >
         <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-          <p>You did not select any team.</p>
+          <p>You did not select any studio.</p>
           <p>
-            To access this page, please select existing team or create new team if you have no
-            teams.
+            To access this page, please select existing studio or create new studio if you have no
+            studios.
           </p>
         </div>
       </Layout>
     );
   }
 
-  if (!isTeamLeader) {
+  if (!isStudioTeacher) {
     return (
       <Layout
         store={store}
         isMobile={isMobile}
-        teamRequired={teamRequired}
+        studioRequired={studioRequired}
         firstGridItem={firstGridItem}
       >
         <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-          <p>Only the Team Leader can access this page.</p>
-          <p>Create your own team to become a Team Leader.</p>
+          <p>Only the Studio Teacher can access this page.</p>
+          <p>Create your own studio to become a Studio Teacher.</p>
         </div>
       </Layout>
     );
@@ -295,7 +295,7 @@ function Billing({
     <Layout
       store={store}
       isMobile={isMobile}
-      teamRequired={teamRequired}
+      studioRequired={studioRequired}
       firstGridItem={firstGridItem}
     >
       <Head>

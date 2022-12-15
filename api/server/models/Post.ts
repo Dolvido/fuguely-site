@@ -5,7 +5,7 @@ import * as hljs from 'highlight.js';
 import { marked } from 'marked';
 
 import Discussion from './Discussion';
-import Team from './Team';
+import Studio from './Studio';
 
 const mongoSchema = new mongoose.Schema({
   createdUserId: {
@@ -107,7 +107,7 @@ interface PostModel extends mongoose.Model<PostDocument> {
 
   delete({ userId, id }: { userId: string; id: string }): Promise<void>;
 
-  checkPermissionAndGetTeamAndDiscussion({
+  checkPermissionAndGetStudioAndDiscussion({
     userId,
     discussionId,
     post,
@@ -115,12 +115,12 @@ interface PostModel extends mongoose.Model<PostDocument> {
     userId: string;
     discussionId: string;
     post: PostDocument;
-  }): Promise<{ TeamDocument; DiscussionDocument }>;
+  }): Promise<{ StudioDocument; DiscussionDocument }>;
 }
 
 class PostClass extends mongoose.Model {
   public static async getList({ userId, discussionId }) {
-    await this.checkPermissionAndGetTeamAndDiscussion({ userId, discussionId });
+    await this.checkPermissionAndGetStudioAndDiscussion({ userId, discussionId });
 
     const filter: any = { discussionId };
 
@@ -134,7 +134,7 @@ class PostClass extends mongoose.Model {
       throw new Error('Bad data');
     }
 
-    await this.checkPermissionAndGetTeamAndDiscussion({ userId, discussionId });
+    await this.checkPermissionAndGetStudioAndDiscussion({ userId, discussionId });
 
     const htmlContent = markdownToHtml(content);
 
@@ -158,7 +158,7 @@ class PostClass extends mongoose.Model {
       .select('createdUserId discussionId')
       .setOptions({ lean: true });
 
-    await this.checkPermissionAndGetTeamAndDiscussion({
+    await this.checkPermissionAndGetStudioAndDiscussion({
       userId,
       discussionId: post.discussionId,
       post,
@@ -184,7 +184,7 @@ class PostClass extends mongoose.Model {
       .select('createdUserId discussionId content')
       .setOptions({ lean: true });
 
-    await this.checkPermissionAndGetTeamAndDiscussion({
+    await this.checkPermissionAndGetStudioAndDiscussion({
       userId,
       discussionId: post.discussionId,
       post,
@@ -193,7 +193,7 @@ class PostClass extends mongoose.Model {
     await this.deleteOne({ _id: id });
   }
 
-  private static async checkPermissionAndGetTeamAndDiscussion({
+  private static async checkPermissionAndGetStudioAndDiscussion({
     userId,
     discussionId,
     post = null,
@@ -207,7 +207,7 @@ class PostClass extends mongoose.Model {
     }
 
     const discussion = await Discussion.findById(discussionId)
-      .select('teamId memberIds slug')
+      .select('studioId memberIds slug')
       .setOptions({ lean: true });
 
     if (!discussion) {
@@ -218,15 +218,15 @@ class PostClass extends mongoose.Model {
       throw new Error('Permission denied');
     }
 
-    const team = await Team.findById(discussion.teamId)
+    const studio = await Studio.findById(discussion.studioId)
       .select('memberIds slug')
       .setOptions({ lean: true });
 
-    if (!team || team.memberIds.indexOf(userId) === -1) {
-      throw new Error('Team not found');
+    if (!studio || studio.memberIds.indexOf(userId) === -1) {
+      throw new Error('Studio not found');
     }
 
-    return { team, discussion };
+    return { studio, discussion };
   }
 }
 

@@ -1,6 +1,6 @@
 import sendRequestAndGetResponse from './sendRequestAndGetResponse';
 
-const BASE_PATH = '/api/v1/team-member';
+const BASE_PATH = '/api/v1/studio-member';
 
 export const getSignedRequestForUploadApiMethod = ({ fileName, fileType, prefix, bucket }) =>
   sendRequestAndGetResponse(`${BASE_PATH}/aws/get-signed-request-for-upload-to-s3`, {
@@ -36,15 +36,15 @@ export const getInitialDataApiMethod = (options: any = {}) =>
     ),
   );
 
-// export const getTeamListApiMethod = () =>
-//   sendRequestAndGetResponse(`${BASE_PATH}/teams`, {
+// export const getStudioListApiMethod = () =>
+//   sendRequestAndGetResponse(`${BASE_PATH}/studios`, {
 //     method: 'GET',
 //   });
 
-export const getTeamMembersApiMethod = (teamId: string) =>
-  sendRequestAndGetResponse(`${BASE_PATH}/teams/get-members`, {
+export const getStudioMembersApiMethod = (studioId: string) =>
+  sendRequestAndGetResponse(`${BASE_PATH}/studios/get-members`, {
     method: 'GET',
-    qs: { teamId },
+    qs: { studioId },
   });
 
 // Discussion and Post

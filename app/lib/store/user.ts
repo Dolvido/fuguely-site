@@ -2,8 +2,8 @@ import { action, observable, runInAction, makeObservable } from 'mobx';
 
 import * as NProgress from 'nprogress';
 
-import { getListOfInvoicesApiMethod } from '../api/team-leader';
-import { toggleThemeApiMethod, updateProfileApiMethod } from '../api/team-member';
+import { getListOfInvoicesApiMethod } from '../api/studio-teacher';
+import { toggleThemeApiMethod, updateProfileApiMethod } from '../api/studio-member';
 import { Store } from './index';
 
 class User {
@@ -17,7 +17,7 @@ class User {
   public isSignedupViaGoogle: boolean;
 
   public darkTheme = false;
-  public defaultTeamSlug: string;
+  public defaultStudioSlug: string;
 
   public stripeCard: {
     brand: string;
@@ -32,7 +32,7 @@ class User {
     data: [
       {
         amount_paid: number;
-        teamName: string;
+        studioName: string;
         created: number;
         hosted_invoice_url: string;
       },
@@ -47,7 +47,7 @@ class User {
       displayName: observable,
       avatarUrl: observable,
       // darkTheme: observable,
-      defaultTeamSlug: observable,
+      defaultStudioSlug: observable,
       stripeCard: observable,
       stripeListOfInvoices: observable,
 
@@ -64,7 +64,7 @@ class User {
     this.avatarUrl = params.avatarUrl;
     this.isSignedupViaGoogle = !!params.isSignedupViaGoogle;
     this.darkTheme = !!params.darkTheme;
-    this.defaultTeamSlug = params.defaultTeamSlug;
+    this.defaultStudioSlug = params.defaultStudioSlug;
 
     this.stripeCard = params.stripeCard;
     this.hasCardInformation = params.hasCardInformation;

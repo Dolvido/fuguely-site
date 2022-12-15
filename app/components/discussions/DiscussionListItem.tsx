@@ -5,24 +5,24 @@ import React from 'react';
 
 import { Store } from '../../lib/store';
 import { Discussion } from '../../lib/store/discussion';
-import { Team } from '../../lib/store/team';
+import { Studio } from '../../lib/store/studio';
 
 import DiscussionActionMenu from './DiscussionActionMenu';
 
 type Props = {
   store: Store;
   discussion: Discussion;
-  team: Team;
+  studio: Studio;
   isMobile: boolean;
 };
 
 class DiscussionListItem extends React.Component<Props> {
   public render() {
-    const { store, discussion, team, isMobile } = this.props;
+    const { store, discussion, studio, isMobile } = this.props;
     const trimmingLength = 16;
 
     const selectedDiscussion =
-      store.currentUrl === `/teams/${team.slug}/discussions/${discussion.slug}`;
+      store.currentUrl === `/studios/${studio.slug}/discussions/${discussion.slug}`;
 
     // console.log(store.currentUrl);
 
@@ -45,8 +45,8 @@ class DiscussionListItem extends React.Component<Props> {
         <li key={discussion._id} style={{ whiteSpace: 'nowrap', paddingRight: '10px' }}>
           <Link
             scroll={false}
-            href={`/discussion?teamSlug=${team.slug}&discussionSlug=${discussion.slug}`}
-            as={`/teams/${team.slug}/discussions/${discussion.slug}`}
+            href={`/discussion?studioSlug=${studio.slug}&discussionSlug=${discussion.slug}`}
+            as={`/studios/${studio.slug}/discussions/${discussion.slug}`}
           >
             <a
               style={{ fontWeight: 300, color: isThemeDark ? '#fff' : '#000' }}

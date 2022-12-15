@@ -18,11 +18,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
 import Layout from '../components/layout';
-import InviteMember from '../components/teams/InviteMember';
+import InviteMember from '../components/studios/InviteMember';
 import {
   getSignedRequestForUploadApiMethod,
   uploadFileUsingSignedPutRequestApiMethod,
-} from '../lib/api/team-member';
+} from '../lib/api/studio-member';
 import confirm from '../lib/confirm';
 import notify from '../lib/notify';
 import { resizeImage } from '../lib/resizeImage';
@@ -33,22 +33,22 @@ type Props = {
   store: Store;
   isMobile: boolean;
   firstGridItem: boolean;
-  teamRequired: boolean;
-  teamSlug: string;
+  studioRequired: boolean;
+  studioSlug: string;
 };
 
-function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }: Props) {
-  const [newName, setNewName] = useState<string>(store.currentTeam.name);
-  const [newAvatarUrl, setNewAvatarUrl] = useState<string>(store.currentTeam.avatarUrl);
+function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studioSlug }: Props) {
+  const [newName, setNewName] = useState<string>(store.currentStudio.name);
+  const [newAvatarUrl, setNewAvatarUrl] = useState<string>(store.currentStudio.avatarUrl);
   const [disabled, setDisabled] = useState<boolean>(false);
   const [inviteMemberOpen, setInviteMemberOpen] = useState<boolean>(false);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
     if (!newName) {
-      notify('Team name is required');
+      notify('Studio name is required');
       return;
     }
 
@@ -56,9 +56,9 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
     setDisabled(true);
 
     try {
-      await currentTeam.updateTheme({ name: newName, avatarUrl: newAvatarUrl });
+      await currentStudio.updateTheme({ name: newName, avatarUrl: newAvatarUrl });
 
-      notify('You successfully updated Team name.');
+      notify('You successfully updated Studio name.');
     } catch (error) {
       notify(error);
     } finally {
@@ -68,9 +68,9 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
   };
 
   const uploadFile = async () => {
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
-    const fileElement = document.getElementById('upload-file-team-logo') as HTMLFormElement;
+    const fileElement = document.getElementById('upload-file-studio-logo') as HTMLFormElement;
     const file = fileElement.files[0];
 
     if (file == null) {
@@ -84,8 +84,8 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
     NProgress.start();
     setDisabled(true);
 
-    const bucket = process.env.NEXT_PUBLIC_BUCKET_FOR_TEAM_LOGOS;
-    const prefix = `${currentTeam.slug}`;
+    const bucket = process.env.NEXT_PUBLIC_BUCKET_FOR_STUDIO_LOGOS;
+    const prefix = `${currentStudio.slug}`;
 
     console.log(bucket);
 
@@ -107,12 +107,12 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
 
       setNewAvatarUrl(responseFromApiServerForUpload.url);
 
-      await currentTeam.updateTheme({
+      await currentStudio.updateTheme({
         name: newName,
         avatarUrl: newAvatarUrl,
       });
 
-      notify('You successfully uploaded new Team logo.');
+      notify('You successfully uploaded new Studio logo.');
     } catch (error) {
       notify(error);
     } finally {
@@ -122,17 +122,17 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
   };
 
   const openInviteMember = async () => {
-    const { currentTeam } = store;
-    if (!currentTeam) {
-      notify('You have not selected a Team.');
+    const { currentStudio } = store;
+    if (!currentStudio) {
+      notify('You have not selected a Studio.');
       return;
     }
 
-    const ifTeamLeaderMustBeCustomer = await currentTeam.checkIfTeamLeaderMustBeCustomer();
+    const ifStudioTeacherMustBeCustomer = await currentStudio.checkIfStudioTeacherMustBeCustomer();
 
-    if (ifTeamLeaderMustBeCustomer) {
+    if (ifStudioTeacherMustBeCustomer) {
       notify(
-        'To add a third team member, you have to become a paid customer.' +
+        'To add a third studio member, you have to become a paid customer.' +
           '<p />' +
           ' To become a paid customer,' +
           ' navigate to Billing page.',
@@ -148,10 +148,10 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
   };
 
   const removeMember = (event) => {
-    const { currentTeam } = store;
+    const { currentStudio } = store;
 
-    if (!currentTeam) {
-      notify('You have not selected a Team.');
+    if (!currentStudio) {
+      notify('You have not selected a Studio.');
       return;
     }
 
@@ -167,7 +167,7 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
       onAnswer: async (answer) => {
         if (answer) {
           try {
-            await currentTeam.removeMember(userId);
+            await currentStudio.removeMember(userId);
           } catch (error) {
             notify(error);
           }
@@ -176,39 +176,39 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
     });
   };
 
-  const { currentTeam, currentUser } = store;
-  const isTeamLeader = currentTeam && currentUser && currentUser._id === currentTeam.teamLeaderId;
+  const { currentStudio, currentUser } = store;
+  const isStudioTeacher = currentStudio && currentUser && currentUser._id === currentStudio.studioTeacherId;
 
-  if (!currentTeam || currentTeam.slug !== teamSlug) {
+  if (!currentStudio || currentStudio.slug !== studioSlug) {
     return (
       <Layout
         store={store}
         isMobile={isMobile}
-        teamRequired={teamRequired}
+        studioRequired={studioRequired}
         firstGridItem={firstGridItem}
       >
         <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-          <p>You did not select any team.</p>
+          <p>You did not select any studio.</p>
           <p>
-            To access this page, please select existing team or create new team if you have no
-            teams.
+            To access this page, please select existing studio or create new studio if you have no
+            studios.
           </p>
         </div>
       </Layout>
     );
   }
 
-  if (!isTeamLeader) {
+  if (!isStudioTeacher) {
     return (
       <Layout
         store={store}
         isMobile={isMobile}
-        teamRequired={teamRequired}
+        studioRequired={studioRequired}
         firstGridItem={firstGridItem}
       >
         <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
-          <p>Only the Team Leader can access this page.</p>
-          <p>Create your own team to become a Team Leader.</p>
+          <p>Only the Studio Teacher can access this page.</p>
+          <p>Create your own studio to become a Studio Teacher.</p>
         </div>
       </Layout>
     );
@@ -218,21 +218,21 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
     <Layout
       store={store}
       isMobile={isMobile}
-      teamRequired={teamRequired}
+      studioRequired={studioRequired}
       firstGridItem={firstGridItem}
     >
       <Head>
-        <title>Team Settings</title>
+        <title>Studio Settings</title>
       </Head>
       <div style={{ padding: isMobile ? '0px' : '0px 30px', fontSize: '15px', height: '100%' }}>
-        <h3>Team Settings</h3>
+        <h3>Studio Settings</h3>
         <p />
         <br />
         <form onSubmit={onSubmit}>
-          <h4>Team name</h4>
+          <h4>Studio name</h4>
           <TextField
             value={newName}
-            helperText="Team name as seen by your team members"
+            helperText="Studio name as seen by your studio members"
             onChange={(event) => {
               setNewName(event.target.value);
             }}
@@ -245,7 +245,7 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
         </form>
         <p />
         <br />
-        <h4>Team logo</h4>
+        <h4>Studio logo</h4>
         <Avatar
           src={newAvatarUrl}
           style={{
@@ -256,15 +256,15 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
             height: 60,
           }}
         />
-        <label htmlFor="upload-file-team-logo">
+        <label htmlFor="upload-file-studio-logo">
           <Button variant="contained" color="primary" component="span" disabled={disabled}>
             Update logo
           </Button>
         </label>
         <input
           accept="image/*"
-          name="upload-file-team-logo"
-          id="upload-file-team-logo"
+          name="upload-file-studio-logo"
+          id="upload-file-studio-logo"
           type="file"
           style={{ display: 'none' }}
           onChange={uploadFile}
@@ -273,7 +273,7 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
         <br />
         <br />
         <h4 style={{ marginRight: 20, display: 'inline' }}>
-          Team Members ( {Array.from(currentTeam.members.values()).length} / 20 )
+          Studio Members ( {Array.from(currentStudio.members.values()).length} / 20 )
         </h4>
         <Button
           onClick={openInviteMember}
@@ -296,8 +296,8 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
             </TableHead>
 
             <TableBody>
-              {currentTeam.memberIds
-                .map((userId) => currentTeam.members.get(userId))
+              {currentStudio.memberIds
+                .map((userId) => currentStudio.members.get(userId))
                 .map((m) => (
                   <TableRow key={m._id}>
                     <TableCell style={{ width: '300px' }}>
@@ -319,10 +319,10 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
                       {m.email}
                     </TableCell>
                     <TableCell>
-                      {isTeamLeader && m._id !== currentUser._id ? 'Team Member' : 'Team Leader'}
+                      {isStudioTeacher && m._id !== currentUser._id ? 'Studio Member' : 'Studio Teacher'}
                     </TableCell>
                     <TableCell>
-                      {isTeamLeader && m._id !== currentUser._id ? (
+                      {isStudioTeacher && m._id !== currentUser._id ? (
                         <DeleteOutlineIcon
                           color="action"
                           data-id={m._id}
@@ -346,7 +346,7 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
         <p />
         <br />
 
-        {Array.from(currentTeam.invitations.values()).length > 0 ? (
+        {Array.from(currentStudio.invitations.values()).length > 0 ? (
           <React.Fragment>
             <h4>Invited users</h4>
             <p />
@@ -360,7 +360,7 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
                 </TableHead>
 
                 <TableBody>
-                  {Array.from(currentTeam.invitations.values()).map((i) => (
+                  {Array.from(currentStudio.invitations.values()).map((i) => (
                     <TableRow key={i._id}>
                       <TableCell style={{ width: '300px' }}>{i.email}</TableCell>
                       <TableCell>Sent</TableCell>
@@ -380,4 +380,4 @@ function TeamSettings({ store, isMobile, firstGridItem, teamRequired, teamSlug }
   );
 }
 
-export default withAuth(inject('store')(observer(TeamSettings)));
+export default withAuth(inject('store')(observer(StudioSettings)));

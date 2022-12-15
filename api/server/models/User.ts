@@ -6,7 +6,7 @@ import sendEmail from '../aws-ses';
 import { addToMailchimp } from '../mailchimp';
 import { generateSlug } from '../utils/slugify';
 import getEmailTemplate from './EmailTemplate';
-import Team, { TeamDocument } from './Team';
+import Studio, { StudioDocument } from './Studio';
 
 import { getListOfInvoices } from '../stripe';
 
@@ -42,7 +42,7 @@ const mongoSchema = new mongoose.Schema({
     default: false,
   },
   darkTheme: Boolean,
-  defaultTeamSlug: {
+  defaultStudioSlug: {
     type: String,
     default: '',
   },
@@ -83,8 +83,8 @@ const mongoSchema = new mongoose.Schema({
         billing: String,
         paid: Boolean,
         number: String,
-        teamId: String,
-        teamName: String,
+        studioId: String,
+        studioName: String,
       },
     ],
   },
@@ -100,7 +100,7 @@ export interface UserDocument extends mongoose.Document {
   googleToken: { accessToken: string; refreshToken: string };
   isSignedupViaGoogle: boolean;
   darkTheme: boolean;
-  defaultTeamSlug: string;
+  defaultStudioSlug: string;
   stripeCustomer: {
     id: string;
     default_source: string;
@@ -134,8 +134,8 @@ export interface UserDocument extends mongoose.Document {
         billing: string;
         paid: boolean;
         number: string;
-        teamId: string;
-        teamName: string;
+        studioId: string;
+        studioName: string;
       },
     ];
   };
@@ -180,21 +180,21 @@ interface UserModel extends mongoose.Model<UserDocument> {
 
   toggleTheme({ userId, darkTheme }: { userId: string; darkTheme: boolean }): Promise<void>;
 
-  getMembersForTeam({
+  getMembersForStudio({
     userId,
-    teamId,
+    studioId,
   }: {
     userId: string;
-    teamId: string;
+    studioId: string;
   }): Promise<UserDocument[]>;
 
-  checkPermissionAndGetTeam({
+  checkPermissionAndGetStudio({
     userId,
-    teamId,
+    studioId,
   }: {
     userId: string;
-    teamId: string;
-  }): Promise<TeamDocument>;
+    studioId: string;
+  }): Promise<StudioDocument>;
 
   saveStripeCustomerAndCard({
     user,
@@ -251,7 +251,7 @@ class UserClass extends mongoose.Model {
       'slug',
       'isSignedupViaGoogle',
       'darkTheme',
-      'defaultTeamSlug',
+      'defaultStudioSlug',
       'stripeCard',
       'hasCardInformation',
       'stripeListOfInvoices',
@@ -299,7 +299,7 @@ class UserClass extends mongoose.Model {
       avatarUrl,
       slug,
       isSignedupViaGoogle: true,
-      defaultTeamSlug: '',
+      defaultStudioSlug: '',
       darkTheme: false,
     });
 
@@ -345,7 +345,7 @@ class UserClass extends mongoose.Model {
       createdAt: new Date(),
       email,
       slug,
-      defaultTeamSlug: '',
+      defaultStudioSlug: '',
     });
 
     const emailTemplate = await getEmailTemplate('welcome', { userName: email });
@@ -379,10 +379,10 @@ class UserClass extends mongoose.Model {
     return this.updateOne({ _id: userId }, { darkTheme: !!darkTheme });
   }
 
-  public static async getMembersForTeam({ userId, teamId }) {
-    const team = await this.checkPermissionAndGetTeam({ userId, teamId });
+  public static async getMembersForStudio({ userId, studioId }) {
+    const studio = await this.checkPermissionAndGetStudio({ userId, studioId });
 
-    return this.find({ _id: { $in: team.memberIds } })
+    return this.find({ _id: { $in: studio.memberIds } })
       .select(this.publicFields().join(' '))
       .setOptions({ lean: true });
   }
@@ -461,20 +461,20 @@ class UserClass extends mongoose.Model {
       .setOptions({ lean: true });
   }
 
-  private static async checkPermissionAndGetTeam({ userId, teamId }) {
-    console.log(userId, teamId);
+  private static async checkPermissionAndGetStudio({ userId, studioId }) {
+    console.log(userId, studioId);
 
-    if (!userId || !teamId) {
+    if (!userId || !studioId) {
       throw new Error('Bad data');
     }
 
-    const team = await Team.findById(teamId).select('memberIds').setOptions({ lean: true });
+    const studio = await Studio.findById(studioId).select('memberIds').setOptions({ lean: true });
 
-    if (!team || team.memberIds.indexOf(userId) === -1) {
-      throw new Error('Team not found');
+    if (!studio || studio.memberIds.indexOf(userId) === -1) {
+      throw new Error('Studio not found');
     }
 
-    return team;
+    return studio;
   }
 }
 

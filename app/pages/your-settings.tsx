@@ -23,7 +23,7 @@ import Layout from '../components/layout';
 import {
   getSignedRequestForUploadApiMethod,
   uploadFileUsingSignedPutRequestApiMethod,
-} from '../lib/api/team-member';
+} from '../lib/api/studio-member';
 
 import notify from '../lib/notify';
 import { resizeImage } from '../lib/resizeImage';
@@ -37,10 +37,10 @@ type Props = {
   store: Store;
   isMobile: boolean;
   firstGridItem: boolean;
-  teamRequired: boolean;
+  studioRequired: boolean;
 };
 
-function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
+function YourSettings({ store, isMobile, firstGridItem, studioRequired }: Props) {
   const [newName, setNewName] = useState<string>(store.currentUser.displayName);
   const [newAvatarUrl, setNewAvatarUrl] = useState<string>(store.currentUser.avatarUrl);
   const [disabled, setDisabled] = useState<boolean>(false);
@@ -133,7 +133,7 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
     <Layout
       store={store}
       isMobile={isMobile}
-      teamRequired={teamRequired}
+      studioRequired={studioRequired}
       firstGridItem={firstGridItem}
     >
       <Head>
@@ -165,7 +165,7 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
           <TextField
             autoComplete="off"
             value={newName}
-            helperText="Your username as seen by your team members"
+            helperText="Your username as seen by your studio members"
             onChange={(event) => {
               setNewName(event.target.value);
             }}
@@ -204,8 +204,8 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
         />
         <p />
         <br />
-        <h4 style={{ marginRight: 20, display: 'inline' }}>Your Teams</h4>
-        <Link href={`${URL_APP}/create-team`}>
+        <h4 style={{ marginRight: 20, display: 'inline' }}>Your Studios</h4>
+        <Link href={`${URL_APP}/create-studio`}>
           <Button
             variant="contained"
             color="primary"
@@ -215,26 +215,26 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
               float: 'right',
             }}
           >
-            + Add team
+            + Add studio
           </Button>
         </Link>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Team name</TableCell>
-                <TableCell>Team slug</TableCell>
+                <TableCell>Studio name</TableCell>
+                <TableCell>Studio slug</TableCell>
                 <TableCell>Action</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {store.teams.map((t) => (
+              {store.studios.map((t) => (
                 <TableRow key={t._id}>
                   <TableCell style={{ width: '300px' }}>{t.name}</TableCell>
                   <TableCell>{t.slug}</TableCell>
                   <TableCell>
-                    <Link href={`${URL_APP}/teams/${t.slug}/discussions`}>
+                    <Link href={`${URL_APP}/studios/${t.slug}/discussions`}>
                       <Button
                         variant="contained"
                         color="primary"
@@ -243,7 +243,7 @@ function YourSettings({ store, isMobile, firstGridItem, teamRequired }: Props) {
                           marginTop: isMobile ? '10px' : 'inherit',
                         }}
                       >
-                        See team
+                        See studio
                       </Button>
                     </Link>
                   </TableCell>

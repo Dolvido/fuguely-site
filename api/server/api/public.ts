@@ -26,13 +26,13 @@ router.post('/get-user-by-slug', async (req, res, next) => {
   }
 });
 
-router.get('/invitations/get-team-by-token', async (req, res, next) => {
+router.get('/invitations/get-studio-by-token', async (req, res, next) => {
   const token = req.query.token as string;
 
   try {
-    const team = await Invitation.getTeamByToken({ token });
+    const studio = await Invitation.getStudioByToken({ token });
 
-    res.json({ team });
+    res.json({ studio });
   } catch (err) {
     next(err);
   }

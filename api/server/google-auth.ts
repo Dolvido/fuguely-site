@@ -32,15 +32,15 @@ function setupGoogle({ server }) {
         avatarUrl,
       });
 
-      let teamSlugOfInvitedTeam;
+      let studioSlugOfInvitedStudio;
       if (user && req.session.invitationToken) {
-        teamSlugOfInvitedTeam = await Invitation.addUserToTeam({
+        studioSlugOfInvitedStudio = await Invitation.addUserToStudio({
           token: req.session.invitationToken,
           user,
         }).catch((err) => console.error(err));
       }
 
-      user.defaultTeamSlug = teamSlugOfInvitedTeam ? teamSlugOfInvitedTeam : user.defaultTeamSlug;
+      user.defaultStudioSlug = studioSlugOfInvitedStudio ? studioSlugOfInvitedStudio : user.defaultStudioSlug;
 
       done(null, user);
     } catch (err) {
@@ -95,10 +95,10 @@ function setupGoogle({ server }) {
       failureRedirect: '/login',
     }),
     async (req, res) => {
-      let teamSlugOfInvitedTeam;
+      let studioSlugOfInvitedStudio;
 
       if (req.user && req.session.invitationToken) {
-        teamSlugOfInvitedTeam = await Invitation.addUserToTeam({
+        studioSlugOfInvitedStudio = await Invitation.addUserToStudio({
           token: req.session.invitationToken,
           user: req.user,
         }).catch((err) => console.error(err));
@@ -107,12 +107,12 @@ function setupGoogle({ server }) {
       }
 
       let redirectUrlAfterLogin;
-      const defaultTeamSlug = req.user && req.user.defaultTeamSlug;
+      const defaultStudioSlug = req.user && req.user.defaultStudioSlug;
 
-      if (teamSlugOfInvitedTeam || defaultTeamSlug) {
+      if (studioSlugOfInvitedStudio || defaultStudioSlug) {
         redirectUrlAfterLogin = `/your-settings`;
       } else {
-        redirectUrlAfterLogin = `/create-team`;
+        redirectUrlAfterLogin = `/create-studio`;
       }
 
       res.redirect(

@@ -8,7 +8,7 @@ import React from 'react';
 
 import { themeDark, themeLight } from '../lib/theme';
 import { getUserApiMethod } from '../lib/api/public';
-import { getInitialDataApiMethod } from '../lib/api/team-member';
+import { getInitialDataApiMethod } from '../lib/api/studio-member';
 import { isMobile } from '../lib/isMobile';
 import { getStore, initializeStore, Store } from '../lib/store';
 
@@ -67,11 +67,11 @@ MyApp.getInitialProps = async ({
   // console.log('MyApp.getInitialProps');
 
   let firstGridItem = true;
-  let teamRequired = false;
+  let studioRequired = false;
 
   if (
     ctx.pathname.includes('/login') ||
-    ctx.pathname.includes('/create-team') ||
+    ctx.pathname.includes('/create-studio') ||
     ctx.pathname.includes('/invitation')
   ) {
     firstGridItem = false;
@@ -79,20 +79,20 @@ MyApp.getInitialProps = async ({
 
   if (
     ctx.pathname.includes('/your-settings') ||
-    ctx.pathname.includes('/team-settings') ||
+    ctx.pathname.includes('/studio-settings') ||
     ctx.pathname.includes('/discussion') ||
     ctx.pathname.includes('/billing')
   ) {
-    teamRequired = true;
+    studioRequired = true;
   }
 
-  const { teamSlug, discussionSlug, redirectMessage } = ctx.query;
+  const { studioSlug, discussionSlug, redirectMessage } = ctx.query;
 
   const pageProps = {
     isMobile: isMobile({ req: ctx.req }),
     firstGridItem,
-    teamRequired,
-    teamSlug,
+    studioRequired,
+    studioSlug,
     discussionSlug,
     redirectMessage,
   };
@@ -124,7 +124,7 @@ MyApp.getInitialProps = async ({
     try {
       initialData = await getInitialDataApiMethod({
         request: ctx.req,
-        data: { teamSlug, discussionSlug },
+        data: { studioSlug, discussionSlug },
       });
     } catch (error) {
       console.error(error);
@@ -133,22 +133,22 @@ MyApp.getInitialProps = async ({
 
   // console.log(initialData);
 
-  let selectedTeamSlug = '';
+  let selectedStudioSlug = '';
 
-  if (teamSlug) {
-    selectedTeamSlug = teamSlug as string;
+  if (studioSlug) {
+    selectedStudioSlug = studioSlug as string;
   } else {
-    selectedTeamSlug = userObj && userObj.defaultTeamSlug;
+    selectedStudioSlug = userObj && userObj.defaultStudioSlug;
   }
 
-  const team =
-    initialData && initialData.teams && initialData.teams.find((t) => t.slug === selectedTeamSlug);
+  const studio =
+    initialData && initialData.studios && initialData.studios.find((t) => t.slug === selectedStudioSlug);
 
   // console.log('userObj', userObj);
 
   return {
     ...appProps,
-    initialState: { user: userObj, currentUrl: ctx.asPath, team, teamSlug, ...initialData },
+    initialState: { user: userObj, currentUrl: ctx.asPath, studio, studioSlug, ...initialData },
   };
 };
 

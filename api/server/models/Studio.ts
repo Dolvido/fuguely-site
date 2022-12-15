@@ -20,7 +20,7 @@ const mongoSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  teamLeaderId: {
+  studioTeacherId: {
     type: String,
     required: true,
   },
@@ -30,7 +30,7 @@ const mongoSchema = new mongoose.Schema({
       required: true,
     },
   ],
-  defaultTeam: {
+  defaultStudio: {
     type: Boolean,
     default: false,
   },
@@ -54,15 +54,15 @@ const mongoSchema = new mongoose.Schema({
   },
 });
 
-export interface TeamDocument extends mongoose.Document {
+export interface StudioDocument extends mongoose.Document {
   name: string;
   slug: string;
   avatarUrl: string;
   createdAt: Date;
 
-  teamLeaderId: string;
+  studioTeacherId: string;
   memberIds: string[];
-  defaultTeam: boolean;
+  defaultStudio: boolean;
 
   stripeSubscription: {
     id: string;
@@ -78,65 +78,65 @@ export interface TeamDocument extends mongoose.Document {
   isPaymentFailed: boolean;
 }
 
-interface TeamModel extends mongoose.Model<TeamDocument> {
-  addTeam({
+interface StudioModel extends mongoose.Model<StudioDocument> {
+  addStudio({
     name,
     userId,
   }: {
     userId: string;
     name: string;
     avatarUrl: string;
-  }): Promise<TeamDocument>;
+  }): Promise<StudioDocument>;
 
-  updateTeam({
+  updateStudio({
     userId,
-    teamId,
+    studioId,
     name,
     avatarUrl,
   }: {
     userId: string;
-    teamId: string;
+    studioId: string;
     name: string;
     avatarUrl: string;
-  }): Promise<TeamDocument>;
+  }): Promise<StudioDocument>;
 
-  getAllTeamsForUser(userId: string): Promise<TeamDocument[]>;
+  getAllStudiosForUser(userId: string): Promise<StudioDocument[]>;
 
   removeMember({
-    teamId,
-    teamLeaderId,
+    studioId,
+    studioTeacherId,
     userId,
   }: {
-    teamId: string;
-    teamLeaderId: string;
+    studioId: string;
+    studioTeacherId: string;
     userId: string;
   }): Promise<void>;
 
-  subscribeTeam({
+  subscribeStudio({
     session,
-    team,
+    studio,
   }: {
     session: Stripe.Checkout.Session;
-    team: TeamDocument;
+    studio: StudioDocument;
   }): Promise<void>;
 
   cancelSubscription({
-    teamLeaderId,
-    teamId,
+    studioTeacherId,
+    studioId,
   }: {
-    teamLeaderId: string;
-    teamId: string;
-  }): Promise<TeamDocument>;
+    studioTeacherId: string;
+    studioId: string;
+  }): Promise<StudioDocument>;
 
   cancelSubscriptionAfterFailedPayment({
     subscriptionId,
   }: {
     subscriptionId: string;
-  }): Promise<TeamDocument>;
+  }): Promise<StudioDocument>;
 }
 
-class TeamClass extends mongoose.Model {
-  public static async addTeam({ userId, name, avatarUrl }) {
+class StudioClass extends mongoose.Model {
+  public static async addStudio({ userId, name, avatarUrl }) {
     console.log(`Static method: ${name}, ${avatarUrl}`);
 
     if (!userId || !name || !avatarUrl) {
@@ -145,82 +145,82 @@ class TeamClass extends mongoose.Model {
 
     const slug = await generateRandomSlug(this);
 
-    let defaultTeam = false;
-    if ((await this.countDocuments({ teamLeaderId: userId })) === 0) {
-      await User.findByIdAndUpdate(userId, { $set: { defaultTeamSlug: slug } });
-      defaultTeam = true;
+    let defaultStudio = false;
+    if ((await this.countDocuments({ studioTeacherId: userId })) === 0) {
+      await User.findByIdAndUpdate(userId, { $set: { defaultStudioSlug: slug } });
+      defaultStudio = true;
     }
 
-    const team = await this.create({
-      teamLeaderId: userId,
+    const studio = await this.create({
+      studioTeacherId: userId,
       name,
       slug,
       avatarUrl,
       memberIds: [userId],
       createdAt: new Date(),
-      defaultTeam,
+      defaultStudio,
     });
 
-    return team;
+    return studio;
   }
 
-  public static async updateTeam({ userId, teamId, name, avatarUrl }) {
-    const team = await this.findById(teamId, 'name teamLeaderId');
+  public static async updateStudio({ userId, studioId, name, avatarUrl }) {
+    const studio = await this.findById(studioId, 'name studioTeacherId');
 
-    if (!team) {
-      throw new Error('Team not found');
+    if (!studio) {
+      throw new Error('Studio not found');
     }
 
-    if (team.teamLeaderId !== userId) {
+    if (studio.studioTeacherId !== userId) {
       throw new Error('Permission denied');
     }
 
-    const modifier = { name: team.name, avatarUrl };
+    const modifier = { name: studio.name, avatarUrl };
 
-    if (name !== team.name) {
+    if (name !== studio.name) {
       modifier.name = name;
     }
 
-    await this.updateOne({ _id: teamId }, { $set: modifier }, { runValidators: true });
+    await this.updateOne({ _id: studioId }, { $set: modifier }, { runValidators: true });
 
-    return this.findById(teamId, 'name avatarUrl slug defaultTeam').setOptions({ lean: true });
+    return this.findById(studioId, 'name avatarUrl slug defaultStudio').setOptions({ lean: true });
   }
 
-  public static getAllTeamsForUser(userId: string) {
+  public static getAllStudiosForUser(userId: string) {
     return this.find({ memberIds: userId }).setOptions({ lean: true });
   }
 
-  public static async removeMember({ teamId, teamLeaderId, userId }) {
-    const team = await this.findById(teamId).select('memberIds teamLeaderId');
+  public static async removeMember({ studioId, studioTeacherId, userId }) {
+    const studio = await this.findById(studioId).select('memberIds studioTeacherId');
 
-    if (!team) {
-      throw new Error('Team does not exist');
+    if (!studio) {
+      throw new Error('Studio does not exist');
     }
 
-    if (team.teamLeaderId !== teamLeaderId || teamLeaderId === userId) {
+    if (studio.studioTeacherId !== studioTeacherId || studioTeacherId === userId) {
       throw new Error('Permission denied');
     }
 
-    await this.findByIdAndUpdate(teamId, { $pull: { memberIds: userId } });
+    await this.findByIdAndUpdate(studioId, { $pull: { memberIds: userId } });
   }
 
-  public static async subscribeTeam({
+  public static async subscribeStudio({
     session,
-    team,
+    studio,
   }: {
     session: Stripe.Checkout.Session;
-    team: TeamDocument;
+    studio: StudioDocument;
   }) {
     if (!session.subscription) {
       throw new Error('Not subscribed');
     }
 
-    if (!team) {
+    if (!studio) {
       throw new Error('User not found.');
     }
 
-    if (team.isSubscriptionActive) {
-      throw new Error('Team is already subscribed.');
+    if (studio.isSubscriptionActive) {
+      throw new Error('Studio is already subscribed.');
     }
 
     const stripeSubscription = session.subscription as Stripe.Subscription;
@@ -228,28 +228,28 @@ class TeamClass extends mongoose.Model {
       throw new Error('Unsubscribed');
     }
 
-    await this.updateOne({ _id: team._id }, { stripeSubscription, isSubscriptionActive: true });
+    await this.updateOne({ _id: studio._id }, { stripeSubscription, isSubscriptionActive: true });
   }
 
-  public static async cancelSubscription({ teamLeaderId, teamId }) {
-    const team = await this.findById(teamId).select(
-      'teamLeaderId isSubscriptionActive stripeSubscription',
+  public static async cancelSubscription({ studioTeacherId, studioId }) {
+    const studio = await this.findById(studioId).select(
+      'studioTeacherId isSubscriptionActive stripeSubscription',
     );
 
-    if (team.teamLeaderId !== teamLeaderId) {
-      throw new Error('You do not have permission to subscribe Team.');
+    if (studio.studioTeacherId !== studioTeacherId) {
+      throw new Error('You do not have permission to subscribe Studio.');
     }
 
-    if (!team.isSubscriptionActive) {
-      throw new Error('Team is already unsubscribed.');
+    if (!studio.isSubscriptionActive) {
+      throw new Error('Studio is already unsubscribed.');
     }
 
     const cancelledSubscriptionObj = await cancelSubscription({
-      subscriptionId: team.stripeSubscription.id,
+      subscriptionId: studio.stripeSubscription.id,
     });
 
     return this.findByIdAndUpdate(
-      teamId,
+      studioId,
       {
         stripeSubscription: cancelledSubscriptionObj,
         isSubscriptionActive: false,
@@ -261,20 +261,20 @@ class TeamClass extends mongoose.Model {
   }
 
   public static async cancelSubscriptionAfterFailedPayment({ subscriptionId }) {
-    const team: any = await this.find({ 'stripeSubscription.id': subscriptionId })
-      .select('teamLeaderId isSubscriptionActive stripeSubscription isPaymentFailed')
+    const studio: any = await this.find({ 'stripeSubscription.id': subscriptionId })
+      .select('studioTeacherId isSubscriptionActive stripeSubscription isPaymentFailed')
       .setOptions({ lean: true });
-    if (!team.isSubscriptionActive) {
-      throw new Error('Team is already unsubscribed.');
+    if (!studio.isSubscriptionActive) {
+      throw new Error('Studio is already unsubscribed.');
     }
-    if (team.isPaymentFailed) {
-      throw new Error('Team is already unsubscribed after failed payment.');
+    if (studio.isPaymentFailed) {
+      throw new Error('Studio is already unsubscribed after failed payment.');
     }
     const cancelledSubscriptionObj = await cancelSubscription({
       subscriptionId,
     });
     return this.findByIdAndUpdate(
-      team._id,
+      studio._id,
       {
         stripeSubscription: cancelledSubscriptionObj,
         isSubscriptionActive: false,
@@ -287,8 +287,8 @@ class TeamClass extends mongoose.Model {
   }
 }
 
-mongoSchema.loadClass(TeamClass);
+mongoSchema.loadClass(StudioClass);
 
-const Team = mongoose.model<TeamDocument, TeamModel>('Team', mongoSchema);
+const Studio = mongoose.model<StudioDocument, StudioModel>('Studio', mongoSchema);
 
-export default Team;
+export default Studio;

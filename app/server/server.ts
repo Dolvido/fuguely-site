@@ -30,10 +30,10 @@ app.prepare().then(() => {
     let redirectUrl = 'login';
 
     if (req.user) {
-      if (!req.user.defaultTeamSlug) {
-        redirectUrl = 'create-team';
+      if (!req.user.defaultStudioSlug) {
+        redirectUrl = 'create-studio';
       } else {
-        redirectUrl = `team/${req.user.defaultTeamSlug}/discussions`;
+        redirectUrl = `studio/${req.user.defaultStudioSlug}/discussions`;
       }
     }
 
@@ -45,32 +45,32 @@ app.prepare().then(() => {
   });
 
   // server.get('/api/v1/public/get-user', (_, res) => {
-  //   res.json({ user: { email: 'team@builderbook.org' } });
+  //   res.json({ user: { email: 'studio@builderbook.org' } });
   // });
 
-  server.get('/teams/:teamSlug/your-settings', (req, res) => {
-    const { teamSlug } = req.params;
-    app.render(req, res, '/your-settings', { teamSlug });
+  server.get('/studios/:studioSlug/your-settings', (req, res) => {
+    const { studioSlug } = req.params;
+    app.render(req, res, '/your-settings', { studioSlug });
   });
 
-  server.get('/teams/:teamSlug/team-settings', (req, res) => {
-    const { teamSlug } = req.params;
-    app.render(req, res, '/team-settings', { teamSlug });
+  server.get('/studios/:studioSlug/studio-settings', (req, res) => {
+    const { studioSlug } = req.params;
+    app.render(req, res, '/studio-settings', { studioSlug });
   });
 
-  server.get('/teams/:teamSlug/billing', (req, res) => {
-    const { teamSlug } = req.params;
-    app.render(req, res, '/billing', { teamSlug, ...(req.query || {}) });
+  server.get('/studios/:studioSlug/billing', (req, res) => {
+    const { studioSlug } = req.params;
+    app.render(req, res, '/billing', { studioSlug, ...(req.query || {}) });
   });
 
-  server.get('/teams/:teamSlug/discussions/:discussionSlug', (req, res) => {
-    const { teamSlug, discussionSlug } = req.params;
-    app.render(req, res, '/discussion', { teamSlug, discussionSlug });
+  server.get('/studios/:studioSlug/discussions/:discussionSlug', (req, res) => {
+    const { studioSlug, discussionSlug } = req.params;
+    app.render(req, res, '/discussion', { studioSlug, discussionSlug });
   });
 
-  server.get('/teams/:teamSlug/discussions', (req, res) => {
-    const { teamSlug } = req.params;
-    app.render(req, res, '/discussion', { teamSlug });
+  server.get('/studios/:studioSlug/discussions', (req, res) => {
+    const { studioSlug } = req.params;
+    app.render(req, res, '/discussion', { studioSlug });
   });
 
   server.get('/signup', (req, res) => {

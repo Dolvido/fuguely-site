@@ -53,13 +53,13 @@ class MemberChooser extends React.Component<Props, State> {
           <TextField
             {...params}
             variant="standard"
-            label="Find team member by name"
+            label="Find studio member by name"
             placeholder="Select participants"
           />
         )}
         onChange={this.handleChange}
         filterSelectedOptions={true}
-        noOptionsText="No team members to select from"
+        noOptionsText="No studio members to select from"
       />
     );
   }
