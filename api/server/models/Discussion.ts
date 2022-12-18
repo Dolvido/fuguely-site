@@ -146,7 +146,7 @@ class DiscussionClass extends mongoose.Model {
       memberIds,
     });
 
-    if (discussion.createdUserId !== userId && studio.studioTeacherId !== userId) {
+    if (discussion.createdUserId !== userId && studio.teacherId !== userId) {
       throw new Error('Permission denied. Only author or studio teacher can edit Discussion.');
     }
 
@@ -185,7 +185,7 @@ class DiscussionClass extends mongoose.Model {
     }
 
     const studio = await Studio.findById(studioId)
-      .select('memberIds studioTeacherId')
+      .select('memberIds teacherId')
       .setOptions({ lean: true });
 
     if (!studio || studio.memberIds.indexOf(userId) === -1) {

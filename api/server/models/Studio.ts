@@ -4,6 +4,8 @@ import Stripe from 'stripe';
 import { cancelSubscription } from '../stripe';
 import { generateRandomSlug } from '../utils/slugify';
 import User from './User';
+import Schedule from './Schedule';
+import { ScheduleDocument } from './Schedule';
 
 const mongoSchema = new mongoose.Schema({
   name: {
@@ -20,7 +22,7 @@ const mongoSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  studioTeacherId: {
+  teacherId: {
     type: String,
     required: true,
   },
@@ -60,7 +62,7 @@ export interface StudioDocument extends mongoose.Document {
   avatarUrl: string;
   createdAt: Date;
 
-  studioTeacherId: string;
+  teacherId: string;
   memberIds: string[];
   defaultStudio: boolean;
 
@@ -102,13 +104,21 @@ interface StudioModel extends mongoose.Model<StudioDocument> {
 
   getAllStudiosForUser(userId: string): Promise<StudioDocument[]>;
 
+  createStudioSchedule({
+    studioId,
+    teacherId,
+  }: {
+    studioId: string;
+    teacherId: string;
+  }): Promise<ScheduleDocument>;
+
   removeMember({
     studioId,
-    studioTeacherId,
+    teacherId,
     userId,
   }: {
     studioId: string;
-    studioTeacherId: string;
+    teacherId: string;
     userId: string;
   }): Promise<void>;
 
@@ -121,10 +131,10 @@ interface StudioModel extends mongoose.Model<StudioDocument> {
   }): Promise<void>;
 
   cancelSubscription({
-    studioTeacherId,
+    teacherId,
     studioId,
   }: {
-    studioTeacherId: string;
+    teacherId: string;
     studioId: string;
   }): Promise<StudioDocument>;
 
@@ -146,13 +156,13 @@ class StudioClass extends mongoose.Model {
     const slug = await generateRandomSlug(this);
 
     let defaultStudio = false;
-    if ((await this.countDocuments({ studioTeacherId: userId })) === 0) {
+    if ((await this.countDocuments({ teacherId: userId })) === 0) {
       await User.findByIdAndUpdate(userId, { $set: { defaultStudioSlug: slug } });
       defaultStudio = true;
     }
 
     const studio = await this.create({
-      studioTeacherId: userId,
+      teacherId: userId,
       name,
       slug,
       avatarUrl,
@@ -161,17 +171,20 @@ class StudioClass extends mongoose.Model {
       defaultStudio,
     });
 
+    //console.log('Studio created, attempting to create schedule');
+    //await Schedule.create({ studioId: studio._id, teacherId: userId });
+
     return studio;
   }
 
   public static async updateStudio({ userId, studioId, name, avatarUrl }) {
-    const studio = await this.findById(studioId, 'name studioTeacherId');
+    const studio = await this.findById(studioId, 'name teacherId');
 
     if (!studio) {
       throw new Error('Studio not found');
     }
 
-    if (studio.studioTeacherId !== userId) {
+    if (studio.teacherId !== userId) {
       throw new Error('Permission denied');
     }
 
@@ -190,14 +203,31 @@ class StudioClass extends mongoose.Model {
     return this.find({ memberIds: userId }).setOptions({ lean: true });
   }
 
-  public static async removeMember({ studioId, studioTeacherId, userId }) {
-    const studio = await this.findById(studioId).select('memberIds studioTeacherId');
+  /* create studio schedule method */
+  public static async createStudioSchedule({ userId, studioId }) {
+    const studio = await this.findById(studioId, 'name teacherId');
+
+    if (!studio) {
+      throw new Error('Studio not found');
+    }
+
+    if (studio.teacherId !== userId) {
+      throw new Error('Permission denied');
+    }
+
+    const sched = await Schedule.create({ studioId: studio._id, teacherId: userId });
+
+    return sched;
+  }
+
+  public static async removeMember({ studioId, teacherId, userId }) {
+    const studio = await this.findById(studioId).select('memberIds teacherId');
 
     if (!studio) {
       throw new Error('Studio does not exist');
     }
 
-    if (studio.studioTeacherId !== studioTeacherId || studioTeacherId === userId) {
+    if (studio.teacherId !== teacherId || teacherId === userId) {
       throw new Error('Permission denied');
     }
 
@@ -231,12 +261,12 @@ class StudioClass extends mongoose.Model {
     await this.updateOne({ _id: studio._id }, { stripeSubscription, isSubscriptionActive: true });
   }
 
-  public static async cancelSubscription({ studioTeacherId, studioId }) {
+  public static async cancelSubscription({ teacherId, studioId }) {
     const studio = await this.findById(studioId).select(
-      'studioTeacherId isSubscriptionActive stripeSubscription',
+      'teacherId isSubscriptionActive stripeSubscription',
     );
 
-    if (studio.studioTeacherId !== studioTeacherId) {
+    if (studio.teacherId !== teacherId) {
       throw new Error('You do not have permission to subscribe Studio.');
     }
 
@@ -262,7 +292,7 @@ class StudioClass extends mongoose.Model {
 
   public static async cancelSubscriptionAfterFailedPayment({ subscriptionId }) {
     const studio: any = await this.find({ 'stripeSubscription.id': subscriptionId })
-      .select('studioTeacherId isSubscriptionActive stripeSubscription isPaymentFailed')
+      .select('teacherId isSubscriptionActive stripeSubscription isPaymentFailed')
       .setOptions({ lean: true });
     if (!studio.isSubscriptionActive) {
       throw new Error('Studio is already unsubscribed.');

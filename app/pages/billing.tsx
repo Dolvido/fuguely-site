@@ -57,7 +57,10 @@ function Billing({
       NProgress.start();
       setDisabled(true);
 
-      const { sessionId } = await fetchCheckoutSessionApiMethod({ mode, studioId: currentStudio._id });
+      const { sessionId } = await fetchCheckoutSessionApiMethod({
+        mode,
+        studioId: currentStudio._id,
+      });
 
       // console.log(process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLEKEY, sessionId);
 
@@ -142,8 +145,8 @@ function Billing({
               <p>Your history of payments:</p>
               <li>
                 ${invoice.amount_paid / 100} was paid on{' '}
-                {moment(invoice.created * 1000).format('MMM Do YYYY')} for Studio '{invoice.studioName}'
-                -{' '}
+                {moment(invoice.created * 1000).format('MMM Do YYYY')} for Studio '
+                {invoice.studioName}' -{' '}
                 <a href={invoice.hosted_invoice_url} target="_blank" rel="noopener noreferrer">
                   See invoice
                 </a>
@@ -180,10 +183,12 @@ function Billing({
     let subscriptionDate;
     let billingDay;
     if (currentStudio && currentStudio.stripeSubscription) {
-      subscriptionDate = moment(currentStudio.stripeSubscription.billing_cycle_anchor * 1000).format(
-        'MMM Do YYYY',
+      subscriptionDate = moment(
+        currentStudio.stripeSubscription.billing_cycle_anchor * 1000,
+      ).format('MMM Do YYYY');
+      billingDay = moment(currentStudio.stripeSubscription.billing_cycle_anchor * 1000).format(
+        'Do',
       );
-      billingDay = moment(currentStudio.stripeSubscription.billing_cycle_anchor * 1000).format('Do');
     }
 
     if (currentStudio && !currentStudio.isSubscriptionActive && currentStudio.isPaymentFailed) {
@@ -200,12 +205,16 @@ function Billing({
           </Button>
           <p />
           <p>
-            Studio was automatically unsubscribed due to failed payment. You will be prompt to update
-            card information if you choose to re-subscribe Studio.
+            Studio was automatically unsubscribed due to failed payment. You will be prompt to
+            update card information if you choose to re-subscribe Studio.
           </p>
         </>
       );
-    } else if (currentStudio && !currentStudio.isSubscriptionActive && !currentStudio.isPaymentFailed) {
+    } else if (
+      currentStudio &&
+      !currentStudio.isSubscriptionActive &&
+      !currentStudio.isPaymentFailed
+    ) {
       return (
         <React.Fragment>
           <p>You are not a paying customer.</p>
@@ -254,7 +263,8 @@ function Billing({
   };
 
   const { currentStudio, currentUser } = store;
-  const isStudioTeacher = currentStudio && currentUser && currentUser._id === currentStudio.studioTeacherId;
+  const isStudioTeacher =
+    currentStudio && currentUser && currentUser._id === currentStudio.teacherId;
 
   if (!currentStudio || currentStudio.slug !== studioSlug) {
     return (

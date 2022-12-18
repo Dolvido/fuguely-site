@@ -19,6 +19,8 @@ import TableRow from '@mui/material/TableRow';
 
 import Layout from '../components/layout';
 import InviteMember from '../components/studios/InviteMember';
+import CreateScheduleForm from '../components/schedule/CreateScheduleForm';
+import UpdateAvailabilityForm from '../components/schedule/AvailabilityForm';
 import {
   getSignedRequestForUploadApiMethod,
   uploadFileUsingSignedPutRequestApiMethod,
@@ -41,6 +43,8 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
   const [newName, setNewName] = useState<string>(store.currentStudio.name);
   const [newAvatarUrl, setNewAvatarUrl] = useState<string>(store.currentStudio.avatarUrl);
   const [disabled, setDisabled] = useState<boolean>(false);
+  const [createScheduleOpen, setCreateScheduleOpen] = useState<boolean>(false);
+  const [updateAvailabilityOpen, setUpdateAvailabilityOpen] = useState<boolean>(false);
   const [inviteMemberOpen, setInviteMemberOpen] = useState<boolean>(false);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -121,6 +125,33 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
     }
   };
 
+  const openCreateSchedule = async () => {
+    const { currentStudio } = store;
+    if (!currentStudio) {
+      notify('You have not selected a Studio.');
+      return;
+    }
+
+    setCreateScheduleOpen(true);
+  };
+
+  const handleCreateScheduleClose = () => {
+    setCreateScheduleOpen(false);
+  };
+
+  const openUpdateAvailability = async () => {
+    const { currentStudio } = store;
+    if (!currentStudio) {
+      notify('You have not selected a Studio.');
+      return;
+    }
+    setUpdateAvailabilityOpen(true);
+  };
+
+  const handleUpdateAvailabilityClose = () => {
+    setUpdateAvailabilityOpen(false);
+  };
+
   const openInviteMember = async () => {
     const { currentStudio } = store;
     if (!currentStudio) {
@@ -177,7 +208,8 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
   };
 
   const { currentStudio, currentUser } = store;
-  const isStudioTeacher = currentStudio && currentUser && currentUser._id === currentStudio.studioTeacherId;
+  const isStudioTeacher =
+    currentStudio && currentUser && currentUser._id === currentStudio.teacherId;
 
   if (!currentStudio || currentStudio.slug !== studioSlug) {
     return (
@@ -225,20 +257,19 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
         <title>Studio Settings</title>
       </Head>
       <div style={{ padding: isMobile ? '0px' : '0px 30px', fontSize: '15px', height: '100%' }}>
-        <h3>Studio Settings</h3>
+        <h3>Your Studio Settings</h3>
         <p />
         <br />
         <form onSubmit={onSubmit}>
           <h4>Studio name</h4>
           <TextField
             value={newName}
-            helperText="Studio name as seen by your studio members"
+            helperText="Studio name as seen by your students"
             onChange={(event) => {
               setNewName(event.target.value);
             }}
           />
-          <br />
-          <br />
+          <p />
           <Button variant="contained" color="primary" type="submit" disabled={disabled}>
             Update username
           </Button>
@@ -272,6 +303,31 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
         <p />
         <br />
         <br />
+        <p>
+          <h4 style={{ marginRight: 20, display: 'inline' }}>Schedule</h4>
+          <label htmlFor="create-schedule-studio">
+            <Button
+              onClick={openCreateSchedule}
+              variant="contained"
+              color="primary"
+              component="span"
+              disabled={disabled}
+            >
+              Create schedule
+            </Button>
+          </label>
+          <label htmlFor="modify-schedule-studio">
+            <Button
+              onClick={openUpdateAvailability}
+              variant="contained"
+              color="primary"
+              component="span"
+              disabled={disabled}
+            >
+              Modify schedule
+            </Button>
+            </label>
+        </p>
         <h4 style={{ marginRight: 20, display: 'inline' }}>
           Studio Members ( {Array.from(currentStudio.members.values()).length} / 20 )
         </h4>
@@ -319,7 +375,9 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
                       {m.email}
                     </TableCell>
                     <TableCell>
-                      {isStudioTeacher && m._id !== currentUser._id ? 'Studio Member' : 'Studio Teacher'}
+                      {isStudioTeacher && m._id !== currentUser._id
+                        ? 'Studio Member'
+                        : 'Studio Teacher'}
                     </TableCell>
                     <TableCell>
                       {isStudioTeacher && m._id !== currentUser._id ? (
@@ -374,6 +432,16 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
         <p />
         <br />
         <InviteMember open={inviteMemberOpen} onClose={handleInviteMemberClose} store={store} />
+        <CreateScheduleForm
+          open={createScheduleOpen}
+          onClose={handleCreateScheduleClose}
+          store={store}
+        />
+        <UpdateAvailabilityForm
+          open={openUpdateAvailability}
+          onClose={handleUpdateAvailabilityClose}
+          store={store}
+        />
         <br />
       </div>
     </Layout>

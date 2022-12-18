@@ -4,11 +4,13 @@ import Invitation from '../models/Invitation';
 import Studio from '../models/Studio';
 import User from '../models/User';
 import { createSession } from '../stripe';
+import Schedule from '../models/Schedule';
 
 const router = express.Router();
 
 router.use((req, res, next) => {
   console.log('studio teacher API', req.path);
+  console.log(req.body);
 
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -25,6 +27,7 @@ router.post('/studios/add', async (req: any, res, next) => {
     console.log(`Express route: ${name}, ${avatarUrl}`);
 
     const studio = await Studio.addStudio({ userId: req.user.id, name, avatarUrl });
+    await Schedule.createSchedule({ studioId: studio._id, teacherId: req.user.id });
 
     res.json(studio);
   } catch (err) {
@@ -81,7 +84,7 @@ router.post('/studios/remove-member', async (req: any, res, next) => {
   try {
     const { studioId, userId } = req.body;
 
-    await Studio.removeMember({ studioTeacherId: req.user.id, studioId, userId });
+    await Studio.removeMember({ teacherId: req.user.id, studioId, userId });
 
     res.json({ done: 1 });
   } catch (err) {
@@ -98,10 +101,10 @@ router.post('/stripe/fetch-checkout-session', async (req: any, res, next) => {
       .setOptions({ lean: true });
 
     const studio = await Studio.findById(studioId)
-      .select(['stripeSubscription', 'slug', 'studioTeacherId'])
+      .select(['stripeSubscription', 'slug', 'teacherId'])
       .setOptions({ lean: true });
 
-    if (!user || !studio || studio.studioTeacherId !== req.user.id) {
+    if (!user || !studio || studio.teacherId !== req.user.id) {
       throw new Error('Permission denied');
     }
 
@@ -126,7 +129,7 @@ router.post('/cancel-subscription', async (req: any, res, next) => {
 
   try {
     const { isSubscriptionActive } = await Studio.cancelSubscription({
-      studioTeacherId: req.user.id,
+      teacherId: req.user.id,
       studioId,
     });
 
@@ -142,6 +145,72 @@ router.get('/get-list-of-invoices-for-customer', async (req: any, res, next) => 
       userId: req.user.id,
     });
     res.json({ stripeListOfInvoices });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* express route for creating a new schedule */
+router.post('/studios/create-schedule', async (req: any, res, next) => {
+  console.log('enter schedule/create');
+  try {
+    console.log('create schedule', req.body);
+    const { studioId, teacherId } = req.body;
+
+    const schedule = await Studio.createStudioSchedule({ studioId, teacherId });
+
+    res.json({done: 1, schedule: schedule});
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/schedule/create', async (req: any, res, next) => {
+  try {
+    const { studioId, teacherId } = req.body;
+    
+    const schedule = await Schedule.createSchedule({ studioId, teacherId });
+    
+    res.json({done: 1, schedule: schedule});
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* express route for updating a schedule's members */
+router.post('/schedule/update-students', async (req: any, res, next) => {
+  try {
+    const { userId, scheduleId, studentIds } = req.body;
+
+    const schedule = await Schedule.updateStudents({ userId, scheduleId, studentIds });
+
+    res.json(schedule);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* express route for updating a teachers availability */
+router.post('/schedule/update-availability', async (req: any, res, next) => {
+  try {
+    const { teacherId, scheduleId, timeRanges } = req.body;
+
+    const schedule = await Schedule.updateAvailability({ teacherId, scheduleId, timeRanges });
+
+    res.json(schedule);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* express route for adding an availability window to a schedule */
+router.post('/schedule/add-availability-window', async (req: any, res, next) => {
+  try {
+    const { studioId, teacherId, availability } = req.body;
+
+    const schedule = await Schedule.addAvailabilityWindow({ studioId, teacherId, availability });
+
+    res.json(schedule);
   } catch (err) {
     next(err);
   }

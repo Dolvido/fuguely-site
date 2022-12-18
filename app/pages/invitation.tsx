@@ -26,7 +26,14 @@ type Props = {
   token: string;
 };
 
-function InvitationPageComp({ store, isMobile, firstGridItem, studioRequired, studio, token }: Props) {
+function InvitationPageComp({
+  store,
+  isMobile,
+  firstGridItem,
+  studioRequired,
+  studio,
+  token,
+}: Props) {
   useEffect(() => {
     const user = store.currentUser;
 

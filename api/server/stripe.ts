@@ -152,7 +152,7 @@ function stripeWebhookAndCheckoutCallback({ server }: { server: express.Applicat
 
     const studio = await Studio.findById(
       session.metadata.studioId,
-      'isSubscriptionActive stripeSubscription studioTeacherId slug',
+      'isSubscriptionActive stripeSubscription teacherId slug',
     ).setOptions({ lean: true });
 
     if (!user) {
@@ -163,7 +163,7 @@ function stripeWebhookAndCheckoutCallback({ server }: { server: express.Applicat
       throw new Error('Studio not found.');
     }
 
-    if (studio.studioTeacherId !== user._id.toString()) {
+    if (studio.teacherId !== user._id.toString()) {
       throw new Error('Permission denied');
     }
 

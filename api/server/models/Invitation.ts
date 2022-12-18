@@ -66,7 +66,7 @@ class InvitationClass extends mongoose.Model {
     }
 
     const studio = await Studio.findById(studioId).setOptions({ lean: true });
-    if (!studio || studio.studioTeacherId !== userId) {
+    if (!studio || studio.teacherId !== userId) {
       throw new Error('Studio does not exist or you have no permission');
     }
 
@@ -125,10 +125,10 @@ class InvitationClass extends mongoose.Model {
 
   public static async getStudioInvitations({ userId, studioId }) {
     const studio = await Studio.findOne({ _id: studioId })
-      .select('studioTeacherId')
+      .select('teacherId')
       .setOptions({ lean: true });
 
-    if (userId !== studio.studioTeacherId) {
+    if (userId !== studio.teacherId) {
       throw new Error('You have no permission.');
     }
 
@@ -171,7 +171,7 @@ class InvitationClass extends mongoose.Model {
     await this.deleteOne({ token });
 
     const studio = await Studio.findById(invitation.studioId)
-      .select('memberIds slug studioTeacherId')
+      .select('memberIds slug teacherId')
       .setOptions({ lean: true });
 
     if (!studio) {
@@ -181,7 +181,7 @@ class InvitationClass extends mongoose.Model {
     if (studio && !studio.memberIds.includes(user._id)) {
       await Studio.updateOne({ _id: studio._id }, { $addToSet: { memberIds: user._id } });
 
-      if (user._id !== studio.studioTeacherId) {
+      if (user._id !== studio.teacherId) {
         await User.findByIdAndUpdate(user._id, { $set: { defaultStudioSlug: studio.slug } });
       }
     }

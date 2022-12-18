@@ -47,8 +47,7 @@ export const getStudioMembersApiMethod = (studioId: string) =>
     qs: { studioId },
   });
 
-// Discussion and Post
-
+/* API methods for discussions */
 export const getDiscussionListApiMethod = (params): Promise<{ discussions: any[] }> =>
   sendRequestAndGetResponse(`${BASE_PATH}/discussions/list`, {
     method: 'GET',
@@ -70,6 +69,7 @@ export const deleteDiscussionApiMethod = (data) =>
     body: JSON.stringify(data),
   });
 
+/* API methods for posts */
 export const getPostListApiMethod = (discussionId: string) =>
   sendRequestAndGetResponse(`${BASE_PATH}/posts/list`, {
     method: 'GET',
@@ -89,6 +89,13 @@ export const editPostApiMethod = (data) =>
 export const deletePostApiMethod = (data) =>
   sendRequestAndGetResponse(`${BASE_PATH}/posts/delete`, {
     body: JSON.stringify(data),
+  });
+
+/* API methods for schedule */
+export const getStudioScheduleApiMethod = (params): Promise<{ schedule: any }> =>
+  sendRequestAndGetResponse(`${BASE_PATH}/schedule/get`, {
+    method: 'GET',
+    qs: params,
   });
 
 export const sendDataToLambdaApiMethod = (data) =>

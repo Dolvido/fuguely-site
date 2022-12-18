@@ -142,7 +142,9 @@ MyApp.getInitialProps = async ({
   }
 
   const studio =
-    initialData && initialData.studios && initialData.studios.find((t) => t.slug === selectedStudioSlug);
+    initialData &&
+    initialData.studios &&
+    initialData.studios.find((t) => t.slug === selectedStudioSlug);
 
   // console.log('userObj', userObj);
 

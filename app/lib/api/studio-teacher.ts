@@ -28,7 +28,13 @@ export const removeMemberApiMethod = (data) =>
     body: JSON.stringify(data),
   });
 
-export const fetchCheckoutSessionApiMethod = ({ mode, studioId }: { mode: string; studioId: string }) =>
+export const fetchCheckoutSessionApiMethod = ({
+  mode,
+  studioId,
+}: {
+  mode: string;
+  studioId: string;
+}) =>
   sendRequestAndGetResponse(`${BASE_PATH}/stripe/fetch-checkout-session`, {
     body: JSON.stringify({ mode, studioId }),
   });
@@ -41,4 +47,26 @@ export const cancelSubscriptionApiMethod = ({ studioId }: { studioId: string }) 
 export const getListOfInvoicesApiMethod = () =>
   sendRequestAndGetResponse(`${BASE_PATH}/get-list-of-invoices-for-customer`, {
     method: 'GET',
+  });
+
+/* API methods for schedule object */
+export const createScheduleApiMethod = (data) =>
+  sendRequestAndGetResponse(`${BASE_PATH}/schedule/create`, {
+    body: JSON.stringify(data),
+  });
+
+export const updateScheduleMembersApiMethod = (data) =>
+  sendRequestAndGetResponse(`${BASE_PATH}/schedule/update`, {
+    body: JSON.stringify(data),
+  });
+
+export const updateScheduleAvailabilityApiMethod = (data) =>
+  sendRequestAndGetResponse(`${BASE_PATH}/schedule/update-availability`, {
+    body: JSON.stringify(data),
+  });
+
+/* API method for adding a new availability window to an existing schedule */
+export const addAvailabilityWindowApiMethod = (data) =>
+  sendRequestAndGetResponse(`${BASE_PATH}/schedule/add-availability-window`, {
+    body: JSON.stringify(data),
   });

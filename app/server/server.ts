@@ -73,6 +73,11 @@ app.prepare().then(() => {
     app.render(req, res, '/discussion', { studioSlug });
   });
 
+  server.get('/studios/:studioSlug/schedule', (req, res) => {
+    const { studioSlug } = req.params;
+    app.render(req, res, '/schedule', { studioSlug });
+  });
+
   server.get('/signup', (req, res) => {
     app.render(req, res, '/login');
   });

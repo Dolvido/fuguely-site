@@ -2,9 +2,11 @@ import { action, computed, IObservableArray, observable, runInAction, makeObserv
 import Router from 'next/router';
 import {
   cancelSubscriptionApiMethod,
+  createScheduleApiMethod,
   inviteMemberApiMethod,
   removeMemberApiMethod,
   updateStudioApiMethod,
+  addAvailabilityWindowApiMethod,
 } from '../api/studio-teacher';
 import {
   addDiscussionApiMethod,
@@ -15,12 +17,13 @@ import { Store } from './index';
 import { User } from './user';
 import { Invitation } from './invitation';
 import { Discussion } from './discussion';
+import { Schedule } from './schedule';
 
 class Studio {
   public store: Store;
 
   public _id: string;
-  public studioTeacherId: string;
+  public teacherId: string;
 
   public name: string;
   public slug: string;
@@ -28,6 +31,8 @@ class Studio {
   public memberIds: IObservableArray<string> = observable([]);
   public members: Map<string, User> = new Map();
   public invitations: Map<string, Invitation> = new Map();
+
+  public schedule: Schedule;
 
   public currentDiscussion?: Discussion;
   public currentDiscussionSlug?: string;
@@ -60,12 +65,19 @@ class Studio {
       isLoadingDiscussions: observable,
       discussions: observable,
 
+      schedule: observable,
+      addAvailabilityWindow: action,
+
       setInitialMembersAndInvitations: action,
       updateTheme: action,
       inviteMember: action,
       removeMember: action,
+      setInitialSchedule: action,
       setInitialDiscussions: action,
+      //setInitialSchedule: action,
       loadDiscussions: action,
+      createSchedule: action,
+      addScheduleToLocalCache: action,
       addDiscussion: action,
       addDiscussionToLocalCache: action,
       deleteDiscussion: action,
@@ -76,7 +88,7 @@ class Studio {
     });
 
     this._id = params._id;
-    this.studioTeacherId = params.studioTeacherId;
+    this.teacherId = params.teacherId;
     this.slug = params.slug;
     this.name = params.name;
     this.avatarUrl = params.avatarUrl;
@@ -115,6 +127,13 @@ class Studio {
     // console.log(this.members);
   }
 
+  public async setInitialSchedule() {
+    this.schedule = await createScheduleApiMethod({
+      studioId: this._id,
+      teacherId: this.teacherId,
+    });
+  }
+
   public async updateTheme({ name, avatarUrl }: { name: string; avatarUrl: string }) {
     try {
       const { slug } = await updateStudioApiMethod({
@@ -134,6 +153,7 @@ class Studio {
     }
   }
 
+  /* Store method for teacher to invite a new student to the studio */
   public async inviteMember(email: string) {
     try {
       const { newInvitation } = await inviteMemberApiMethod({ studioId: this._id, email });
@@ -147,6 +167,7 @@ class Studio {
     }
   }
 
+  /* Store method for teacher to remove a student from the studio */
   public async removeMember(userId: string) {
     try {
       await removeMemberApiMethod({ studioId: this._id, userId });
@@ -239,6 +260,47 @@ class Studio {
       });
     });
   }
+
+  /* store method for creating a new schedule entry
+  * currently unused */
+  public async createSchedule(data): Promise<Schedule> {
+    const { schedule } = await createScheduleApiMethod({
+      studioId: this._id,
+      teacherId: this.teacherId, 
+      ...data,
+    });
+
+    return new Promise<Schedule>((resolve) => {
+      runInAction(() => {
+        const obj = this.addScheduleToLocalCache(schedule);
+        resolve(obj);
+      });
+    });
+  }
+
+  /* store method for adding a new availability window to a schedule */
+  public async addAvailabilityWindow(data): Promise<Schedule> {
+    console.log(data);
+    const { schedule } = await addAvailabilityWindowApiMethod({ studioId: this._id, teacherId: this.teacherId, ...data });
+
+    return new Promise<Schedule>((resolve) => {
+      runInAction(() => {
+        const obj = this.addScheduleToLocalCache(schedule);
+        resolve(obj);
+      });
+    });
+  }
+
+  public addScheduleToLocalCache(data) : Schedule {
+    const obj = new Schedule({ studio: this, store: this.store, ...data });
+
+    if (obj.teacherId === this.store.currentUser._id) {
+      this.schedule = obj;
+    }
+
+    return obj;
+  }
+
 
   public addDiscussionToLocalCache(data): Discussion {
     const obj = new Discussion({ studio: this, store: this.store, ...data });

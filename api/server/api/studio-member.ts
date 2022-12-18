@@ -7,6 +7,7 @@ import Studio from '../models/Studio';
 import Invitation from '../models/Invitation';
 import Discussion from '../models/Discussion';
 import Post from '../models/Post';
+import Schedule from '../models/Schedule';
 
 import {
   discussionAdded,
@@ -112,18 +113,23 @@ async function loadStudioData(studio, userId, body) {
   });
 
   let initialInvitations = [];
-  if (userId === studio.studioTeacherId) {
+  if (userId === studio.teacherId) {
     initialInvitations = await Invitation.getStudioInvitations({
       userId,
       studioId: studio._id,
     });
   }
 
+  const initialSchedule = await Schedule.getSchedule({
+    userId,
+    studioId: studio._id,
+  });
+
   console.log(`initialMembers:${initialMembers}`);
 
   const initialDiscussions = await loadDiscussionsData(studio, userId, body);
 
-  const data: any = { initialMembers, initialInvitations, initialDiscussions };
+  const data: any = { initialMembers, initialInvitations, initialDiscussions, initialSchedule };
 
   // console.log(`Express route:${data.initialPosts}`);
 
@@ -179,6 +185,7 @@ router.get('/studios/get-members', async (req: any, res, next) => {
   }
 });
 
+/* express routes for discussions */
 router.post('/discussions/add', async (req: any, res, next) => {
   try {
     const { name, studioId, memberIds = [], socketId, notificationType } = req.body;
@@ -246,6 +253,7 @@ router.get('/discussions/list', async (req: any, res, next) => {
   }
 });
 
+/* express routes for posts */
 router.get('/posts/list', async (req: any, res, next) => {
   try {
     const posts = await Post.getList({
@@ -296,6 +304,20 @@ router.post('/posts/delete', async (req: any, res, next) => {
     postDeleted({ socketId, id, discussionId });
 
     res.json({ done: 1 });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* express routes for schedule */
+/* express route for getting a schedule */
+router.get('/schedule/get', async (req: any, res, next) => {
+  try {
+    const { userId, studioId } = req.query;
+
+    const schedule = await Schedule.getSchedule({ userId, studioId });
+
+    res.json(schedule);
   } catch (err) {
     next(err);
   }
