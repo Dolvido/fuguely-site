@@ -27,7 +27,9 @@ router.post('/studios/add', async (req: any, res, next) => {
     console.log(`Express route: ${name}, ${avatarUrl}`);
 
     const studio = await Studio.addStudio({ userId: req.user.id, name, avatarUrl });
-    await Schedule.createSchedule({ studioId: studio._id, teacherId: req.user.id });
+    const sched = await Schedule.createSchedule({ studioId: studio._id, teacherId: req.user.id });
+
+    console.log(sched);
 
     res.json(studio);
   } catch (err) {

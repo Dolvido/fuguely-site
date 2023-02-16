@@ -120,6 +120,12 @@ function LayoutWrapper({
               <MenuWithLinks
                 options={[
                   {
+                    text: 'Schedule',
+                    href: `/your-schedule?studioSlug=${store.currentStudio.slug}`,
+                    as: `/studios/${store.currentStudio.slug}/schedule`,
+                    highlighterSlug: '/schedule',
+                  },
+                  {
                     text: 'Your Settings',
                     href: `/your-settings?studioSlug=${store.currentStudio.slug}`,
                     as: `/studios/${store.currentStudio.slug}/your-settings`,

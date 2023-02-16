@@ -1,0 +1,27 @@
+      /* [
+
+
+      scheduleId: '',
+
+      events: [],
+      calendarWeekends: true,
+      calendarEvents: [], // initial event data
+      availabilityType: 'add',
+      selectedStart: null,
+      selectedEnd: null,
+      businessHours: []
+        // define available times
+        {
+          daysOfWeek: [1, 2, 3, 4, 5], // available on weekdays
+          startTime: '09:00', // start at 9:00 AM
+          endTime: '17:00', // end at 5:00 PM
+          backgroundColor: '#00b8d4',
+        },
+        // define unavailable times
+        {
+          daysOfWeek: [6, 0], // unavailable on weekends
+          startTime: '00:00', // start at midnight
+          endTime: '00:00', // end at midnight
+          backgroundColor: '#ff1744',
+        },
+      ] */

@@ -36,6 +36,7 @@ function CreateStudio({ store, isMobile, firstGridItem, studioRequired }: Props)
 
   const router = useRouter();
 
+  // crete studio submit handler
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -104,7 +105,7 @@ function CreateStudio({ store, isMobile, firstGridItem, studioRequired }: Props)
     } finally {
       setDisabled(false);
     }
-  };
+  }; // end onSubmit
 
   const previewStudioLogo = () => {
     const file = (document.getElementById('upload-file') as HTMLFormElement).files[0];

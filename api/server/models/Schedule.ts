@@ -16,8 +16,7 @@ import Studio, { StudioDocument } from './Studio';
 
 */
 const mongoSchema = new mongoose.Schema({
-  studioId: 
-  {
+  studioId: {
     type: String,
     required: true,
   },
@@ -32,18 +31,11 @@ const mongoSchema = new mongoose.Schema({
     required: true,
   },
   lessons: [String],
-  availability: [{
+  availability: [
+    {
       dayOfWeek: { type: String, default: '' },
       startTime: { type: String, default: '' },
       endTime: { type: String, default: '' },
-      //duration: Number,
-      //frequency: String,
-      //booked: [
-      //  {
-      //    start: Date,
-      //    end: Date,
-      //  },
-      //],
     },
   ],
 });
@@ -151,7 +143,15 @@ class ScheduleClass extends mongoose.Model<ScheduleDocument> {
    * @param studioId - the studio id of the studio the schedule belongs to
    */
   public static async getSchedule({ userId, studioId }) {
-    return this.checkPermissionAndGetStudio({ userId, studioId });
+    if (!this.checkPermissionAndGetStudio({ userId, studioId })) {
+      throw new Error('User does not have permission to view schedule');
+    }
+
+    const schedule = await this.findOne({ studioId })
+      .select('teacherId studioId studentIds slug lessons availability')
+      .setOptions({ lean: true });
+
+    return { schedule };
   }
   /*
    * Create a new schedule for a teacher
@@ -252,23 +252,6 @@ class ScheduleClass extends mongoose.Model<ScheduleDocument> {
     if (!schedule) {
       throw new Error('Schedule not found');
     }
-   /*  dayOfWeek: string;
-    startTime: Date;
-    endTime: Date;
-    duration: number;
-    frequency: string;
-    booked: { start: Date; end: Date }[];
-  }[]; */
-
-    // create a new availabilty window
-    /* const availWindow = {
-      dayOfWeek: availability[0].dayOfWeek,
-      startTime: availability[0].startTime,
-      endTime: availability[0].endTime,
-      frequency: 'weekly',
-    }; */
-
-    //console.log('availWindow', availWindow);
 
     // add the new availability window to the schedule
     const updatedSchedule = await this.findOneAndUpdate(

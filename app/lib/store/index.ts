@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 
 import { addStudioApiMethod, getStudioInvitationsApiMethod } from '../api/studio-teacher';
 import { getStudioMembersApiMethod } from '../api/studio-member';
-//import { getStudioScheduleApiMethod } from '../api/studio-member';
+import { getStudioScheduleApiMethod } from '../api/studio-member';
 
 import { User } from './user';
 import { Studio } from './studio';
@@ -97,10 +97,9 @@ class Store {
   }): Promise<Studio> {
     const data = await addStudioApiMethod({ name, avatarUrl });
     const studio = new Studio({ store: this, ...data });
-    //const schedule = new Schedule({ store: this, ...data });
 
     return studio;
-  }
+  } // end addStudio
 
   public async setCurrentStudio(studio) {
     if (this.currentStudio) {
@@ -121,12 +120,12 @@ class Store {
 
       this.currentStudio.setInitialMembersAndInvitations(users, invitations);
 
-      //this.currentStudio.setInitialSchedule();
+      this.currentStudio.setInitialSchedule();
 
-      //const schedule =
-      //  studio.initialSchedule || (await getStudioScheduleApiMethod(this.currentStudio._id));
+      /* const schedule =
+        studio.initialSchedule || (await getStudioScheduleApiMethod(this.currentStudio._id, this.currentUser));
 
-      //this.currentStudio.setInitialSchedule(users, schedule);
+      this.currentStudio.setInitialSchedule(schedule); */
     } else {
       this.currentStudio = null;
     }

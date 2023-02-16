@@ -19,12 +19,13 @@ import TableRow from '@mui/material/TableRow';
 
 import Layout from '../components/layout';
 import InviteMember from '../components/studios/InviteMember';
-import CreateScheduleForm from '../components/schedule/CreateScheduleForm';
 import UpdateAvailabilityForm from '../components/schedule/AvailabilityForm';
 import {
   getSignedRequestForUploadApiMethod,
   uploadFileUsingSignedPutRequestApiMethod,
 } from '../lib/api/studio-member';
+import TeacherCalendar from '../components/Calendar/TeacherCalendar';
+
 import confirm from '../lib/confirm';
 import notify from '../lib/notify';
 import { resizeImage } from '../lib/resizeImage';
@@ -43,7 +44,6 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
   const [newName, setNewName] = useState<string>(store.currentStudio.name);
   const [newAvatarUrl, setNewAvatarUrl] = useState<string>(store.currentStudio.avatarUrl);
   const [disabled, setDisabled] = useState<boolean>(false);
-  const [createScheduleOpen, setCreateScheduleOpen] = useState<boolean>(false);
   const [updateAvailabilityOpen, setUpdateAvailabilityOpen] = useState<boolean>(false);
   const [inviteMemberOpen, setInviteMemberOpen] = useState<boolean>(false);
 
@@ -123,20 +123,6 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
       setDisabled(false);
       NProgress.done();
     }
-  };
-
-  const openCreateSchedule = async () => {
-    const { currentStudio } = store;
-    if (!currentStudio) {
-      notify('You have not selected a Studio.');
-      return;
-    }
-
-    setCreateScheduleOpen(true);
-  };
-
-  const handleCreateScheduleClose = () => {
-    setCreateScheduleOpen(false);
   };
 
   const openUpdateAvailability = async () => {
@@ -305,28 +291,11 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
         <br />
         <p>
           <h4 style={{ marginRight: 20, display: 'inline' }}>Schedule</h4>
-          <label htmlFor="create-schedule-studio">
-            <Button
-              onClick={openCreateSchedule}
-              variant="contained"
-              color="primary"
-              component="span"
-              disabled={disabled}
-            >
-              Create schedule
-            </Button>
-          </label>
-          <label htmlFor="modify-schedule-studio">
-            <Button
-              onClick={openUpdateAvailability}
-              variant="contained"
-              color="primary"
-              component="span"
-              disabled={disabled}
-            >
-              Modify schedule
-            </Button>
-            </label>
+            <UpdateAvailabilityForm
+            open={openUpdateAvailability}
+            onClose={handleUpdateAvailabilityClose}
+            store={store}
+            />
         </p>
         <h4 style={{ marginRight: 20, display: 'inline' }}>
           Studio Members ( {Array.from(currentStudio.members.values()).length} / 20 )
@@ -432,16 +401,6 @@ function StudioSettings({ store, isMobile, firstGridItem, studioRequired, studio
         <p />
         <br />
         <InviteMember open={inviteMemberOpen} onClose={handleInviteMemberClose} store={store} />
-        <CreateScheduleForm
-          open={createScheduleOpen}
-          onClose={handleCreateScheduleClose}
-          store={store}
-        />
-        <UpdateAvailabilityForm
-          open={openUpdateAvailability}
-          onClose={handleUpdateAvailabilityClose}
-          store={store}
-        />
         <br />
       </div>
     </Layout>

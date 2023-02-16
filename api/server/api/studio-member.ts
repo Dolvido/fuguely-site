@@ -124,6 +124,8 @@ async function loadStudioData(studio, userId, body) {
     userId,
     studioId: studio._id,
   });
+  console.log(`initialSchedule:${initialSchedule}`);
+  console.log('initialSchedule', initialSchedule);
 
   console.log(`initialMembers:${initialMembers}`);
 
@@ -313,7 +315,15 @@ router.post('/posts/delete', async (req: any, res, next) => {
 /* express route for getting a schedule */
 router.get('/schedule/get', async (req: any, res, next) => {
   try {
+    console.log('req.query', req.query);
+
+    if (!req.query.userId && req.query.teacherId){
+      req.query.userId = req.query.teacherId;
+    }
     const { userId, studioId } = req.query;
+
+    console.log('userId', userId);
+    console.log('studioId', studioId);
 
     const schedule = await Schedule.getSchedule({ userId, studioId });
 

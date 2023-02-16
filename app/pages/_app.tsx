@@ -12,6 +12,8 @@ import { getInitialDataApiMethod } from '../lib/api/studio-member';
 import { isMobile } from '../lib/isMobile';
 import { getStore, initializeStore, Store } from '../lib/store';
 
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
+
 // import type { AppProps } from 'next/app';
 import { NextPage, NextPageContext } from 'next';
 
@@ -81,12 +83,13 @@ MyApp.getInitialProps = async ({
     ctx.pathname.includes('/your-settings') ||
     ctx.pathname.includes('/studio-settings') ||
     ctx.pathname.includes('/discussion') ||
-    ctx.pathname.includes('/billing')
+    ctx.pathname.includes('/billing') ||
+    ctx.pathname.includes('/schedule')
   ) {
     studioRequired = true;
   }
 
-  const { studioSlug, discussionSlug, redirectMessage } = ctx.query;
+  const { studioSlug, discussionSlug, scheduleSlug, redirectMessage } = ctx.query;
 
   const pageProps = {
     isMobile: isMobile({ req: ctx.req }),
@@ -94,6 +97,7 @@ MyApp.getInitialProps = async ({
     studioRequired,
     studioSlug,
     discussionSlug,
+    scheduleSlug,
     redirectMessage,
   };
 
@@ -124,7 +128,7 @@ MyApp.getInitialProps = async ({
     try {
       initialData = await getInitialDataApiMethod({
         request: ctx.req,
-        data: { studioSlug, discussionSlug },
+        data: { studioSlug, discussionSlug, scheduleSlug },
       });
     } catch (error) {
       console.error(error);
