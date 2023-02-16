@@ -161,7 +161,7 @@ router.post('/studios/create-schedule', async (req: any, res, next) => {
 
     const schedule = await Studio.createStudioSchedule({ studioId, teacherId });
 
-    res.json({done: 1, schedule: schedule});
+    res.json({ done: 1, schedule: schedule });
   } catch (err) {
     next(err);
   }
@@ -170,10 +170,10 @@ router.post('/studios/create-schedule', async (req: any, res, next) => {
 router.post('/schedule/create', async (req: any, res, next) => {
   try {
     const { studioId, teacherId } = req.body;
-    
+
     const schedule = await Schedule.createSchedule({ studioId, teacherId });
-    
-    res.json({done: 1, schedule: schedule});
+
+    res.json({ done: 1, schedule: schedule });
   } catch (err) {
     next(err);
   }
@@ -195,9 +195,17 @@ router.post('/schedule/update-students', async (req: any, res, next) => {
 /* express route for updating a teachers availability */
 router.post('/schedule/update-availability', async (req: any, res, next) => {
   try {
-    const { teacherId, scheduleId, timeRanges } = req.body;
+    console.log('express route: /schedule/update-availability', req.body);
+    const timeRanges = [];
+    for (const key in req.body) {
+      if (key !== 'studioId' && key !== 'teacherId') {
+        timeRanges.push(req.body[key]);
+      }
+    }
+    const { studioId, teacherId } = req.body;
+    console.log('timeRanges', timeRanges);
 
-    const schedule = await Schedule.updateAvailability({ teacherId, scheduleId, timeRanges });
+    const schedule = await Schedule.updateAvailability({ studioId, teacherId, timeRanges });
 
     res.json(schedule);
   } catch (err) {

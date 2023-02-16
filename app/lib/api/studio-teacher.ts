@@ -60,7 +60,7 @@ export const updateScheduleMembersApiMethod = (data) =>
     body: JSON.stringify(data),
   });
 
-export const updateScheduleAvailabilityApiMethod = (data) =>
+export const updateAvailabilityApiMethod = (data) =>
   sendRequestAndGetResponse(`${BASE_PATH}/schedule/update-availability`, {
     body: JSON.stringify(data),
   });

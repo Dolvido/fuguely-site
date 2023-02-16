@@ -21,9 +21,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
-import TimePicker from '@mui/lab/TimePicker';
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import LocalizationProvider from '@mui/lab/LocalizationProvider';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import type {} from '@mui/x-date-pickers/themeAugmentation';
+import moment from 'moment';
 
 import notify from '../../lib/notify';
 
@@ -73,7 +75,6 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
 
     const sortedAvailability = this.state.availability.sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
-
     return (
       <React.Fragment>
         {open ? (
@@ -113,32 +114,28 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
                           {row.dayOfWeek}
                         </TableCell>
                         <TableCell align="right">
-                          <TextField
-                            id="start-time"
-                            type="time"
-                            defaultValue={this.getTime(row.startTime)}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                            inputProps={{
-                              step: 1800, // 5 min
-                            }}
-                            onBlur={(e) => this.onChangeStartTime(row.dayOfWeek, e.target.value)}
-                          />
+                          <LocalizationProvider dateAdapter={AdapterMoment}>
+                            <TimePicker
+                              label="start time"
+                              value={moment(row.startTime, 'HH:mm')}
+                              onChange={(newValue) => {
+                                this.onChangeStartTime(row.dayOfWeek, newValue);
+                              }}
+                              renderInput={(params) => <TextField {...params} />}
+                            />
+                          </LocalizationProvider>
                         </TableCell>
                         <TableCell align="right">
-                          <TextField
-                            id="end-time"
-                            type="time"
-                            defaultValue={this.getTime(row.endTime)}
-                            InputLabelProps={{
-                              shrink: true,
-                            }}
-                            inputProps={{
-                              step: 1800, // 5 min
-                            }}
-                            onBlur={(e) => this.onChangeEndTime(row.dayOfWeek, e.target.value)}
-                          />
+                          <LocalizationProvider dateAdapter={AdapterMoment}>
+                            <TimePicker
+                              label="end time"
+                              value={moment(row.endTime, 'HH:mm')}
+                              onChange={(newValue) => {
+                                this.onChangeEndTime(row.dayOfWeek, newValue);
+                              }}
+                              renderInput={(params) => <TextField {...params} />}
+                            />
+                          </LocalizationProvider>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -204,6 +201,10 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     const { selectedDayOfWeek } = this.state;
     const newDayOfWeek = selectedDayOfWeek;
 
+    if (!newDayOfWeek) {
+      return;
+    }
+
     const { availability } = this.state;
     const newRow = {
       dayOfWeek: newDayOfWeek,
@@ -245,14 +246,15 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     return formattedTime;
   };
 
-  private onChangeStartTime = (dayOfWeek: string, start: string) => {
+  private onChangeStartTime = (dayOfWeek: string, start: moment.Moment) => {
+    const formattedStartTime = start.format('HH:mm');
     const { availability } = this.state;
 
     const updatedAvailability = availability.map((hour) => {
       if (hour.dayOfWeek === dayOfWeek) {
         return {
           ...hour,
-          startTime: start,
+          startTime: formattedStartTime,
         };
       } else {
         return hour;
@@ -260,16 +262,22 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     });
 
     this.setState({ availability: updatedAvailability });
+    console.log('onChangeStartTime', updatedAvailability);
   };
 
-  private onChangeEndTime = (dayOfWeek: string, end: string) => {
+  private onChangeEndTime = (dayOfWeek: string, end: moment.Moment) => {
+    const formattedEndTime = end.format('HH:mm');
     const { availability } = this.state;
 
     const updatedAvailability = availability.map((hour) => {
       if (hour.dayOfWeek === dayOfWeek) {
+        if (formattedEndTime < hour.startTime) {
+          notify('End time must be after the start time!');
+          return hour;
+        }
         return {
           ...hour,
-          endTime: end,
+          endTime: formattedEndTime,
         };
       } else {
         return hour;
@@ -277,13 +285,12 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     });
 
     this.setState({ availability: updatedAvailability });
+    console.log('onChangeEndTime', updatedAvailability);
   };
 
   public handleClose = () => {
     this.setState({
-      days: [],
-      startTimes: [],
-      endTimes: [],
+      availability: [],
       disabled: false,
     });
     this.props.onClose();
@@ -301,24 +308,21 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     const { currentStudio } = store;
 
     if (!currentStudio) {
-      notify('Studio have not selected');
+      notify('Studio not selected');
       return;
     }
 
-    const { days, startTimes, endTimes } = this.state;
+    const { availability } = this.state;
 
-    if (!days || days.length < 1) {
-      notify('At least one day is required');
-      return;
-    }
+    // Check for invalid start/end time combinations
+    const invalidTimes = availability.filter((row) => {
+      const start = moment(row.startTime, 'HH:mm');
+      const end = moment(row.endTime, 'HH:mm');
+      return start.isAfter(end);
+    });
 
-    if (!startTimes || startTimes.length < 1) {
-      notify('Start time is required');
-      return;
-    }
-
-    if (!endTimes || endTimes.length < 1) {
-      notify('End time is required');
+    if (invalidTimes.length > 0) {
+      notify('End time cannot be before start time');
       return;
     }
 
@@ -328,19 +332,10 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     // console.log(notificationType);
 
     try {
-      const availability = await currentStudio.changeAvailability({
-        days,
-        startTimes,
-        endTimes,
-      });
-
-      //const post = await availability.addPost(content);
+      const result = await currentStudio.updateAvailability(availability);
+      notify('Your schedule has been modified successfully.');
 
       const dev = process.env.NODE_ENV !== 'production';
-
-      this.setState({ days: [], startTimes: [], endTimes: [] });
-
-      notify('Your schedule has been modified successfully.');
 
       /*Router.push(
         `/discussion?studioSlug=${currentStudio.slug}&discussionSlug=${discussion.slug}`,

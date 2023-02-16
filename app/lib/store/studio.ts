@@ -7,6 +7,7 @@ import {
   removeMemberApiMethod,
   updateStudioApiMethod,
   addAvailabilityWindowApiMethod,
+  updateAvailabilityApiMethod,
 } from '../api/studio-teacher';
 import {
   addDiscussionApiMethod,
@@ -284,6 +285,21 @@ class Studio {
     return new Promise<Discussion>((resolve) => {
       runInAction(() => {
         const obj = this.addDiscussionToLocalCache(discussion);
+        resolve(obj);
+      });
+    });
+  }
+
+  public async updateAvailability(data): Promise<Schedule> {
+    const { schedule } = await updateAvailabilityApiMethod({
+      studioId: this._id,
+      teacherId: this.teacherId,
+      ...data,
+    });
+
+    return new Promise<Schedule>((resolve) => {
+      runInAction(() => {
+        const obj = this.addScheduleToLocalCache(schedule);
         resolve(obj);
       });
     });

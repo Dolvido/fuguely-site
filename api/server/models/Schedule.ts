@@ -83,18 +83,14 @@ interface ScheduleModel extends mongoose.Model<ScheduleDocument> {
    * Update teacher's available times for lessons
    */
   updateAvailability({
+    studioId,
     teacherId,
-    scheduleId,
     timeRanges,
   }: {
+    studioId: string;
     teacherId: string;
-    scheduleId: string;
-    timeRanges: [
-      {
-        start: Date;
-        end: Date;
-      },
-    ];
+    timeRanges: any;
+    
   }): Promise<ScheduleDocument>;
 
   /* add availability window */
@@ -176,20 +172,20 @@ class ScheduleClass extends mongoose.Model<ScheduleDocument> {
 
   /*
    * Update teacher's available times for lessons
-   * @param scheduleId - the schedule id of the schedule to update
    * @param teacherId - the user id of the teacher
    * @param TimeRanges - the time ranges that the teacher is available
    * @param TimeRanges.start - the start time of the time range
    * @param TimeRanges.end - the end time of the time range
    * @param TimeRanges.day - the day of the time range
    */
-  public static async updateAvailability({ teacherId, scheduleId, timeRanges }) {
-    if (!scheduleId || !teacherId) {
-      throw new Error('Invalid schedule or user');
+  public static async updateAvailability({ studioId, teacherId, timeRanges }) {
+    console.log('updating availability', timeRanges);
+    if (!studioId || !teacherId) {
+      throw new Error('Invalid teacherId');
     }
 
-    const schedule = await this.findById(scheduleId)
-      .select('teacherId studioId,availability')
+    const schedule = await this.findOne({ studioId })
+      .select('teacherId studioId studentIds slug lessons availability')
       .setOptions({ lean: true });
 
     if (!schedule) {
@@ -205,29 +201,40 @@ class ScheduleClass extends mongoose.Model<ScheduleDocument> {
       throw new Error('User does not have permission to update schedule');
     }
 
+    // Get the days of the week in the new availability object
+    const days = timeRanges.map((range) => range.dayOfWeek);
+
+    // Remove the availability windows for the days that are not in the new availability object
+    const updatedAvailability = schedule.availability.filter((window) =>
+      days.includes(window.dayOfWeek),
+    );
+
     // Update the availability windows with the new time ranges
-    const updatedAvailability = schedule.availability.map((window) => {
-      // Find the time range that corresponds to this availability window
-      const timeRange = timeRanges.find((range) => range.dayOfWeek === window.dayOfWeek);
-
-      // If no matching time range was found, return the original window
-      if (!timeRange) {
-        return window;
+    timeRanges.forEach((range) => {
+      const index = updatedAvailability.findIndex((window) => window.dayOfWeek === range.dayOfWeek);
+      if (index === -1) {
+        // The day was not found, so add a new availability window
+        updatedAvailability.push({
+          dayOfWeek: range.dayOfWeek,
+          startTime: range.startTime,
+          endTime: range.endTime,
+          duration: range.duration,
+          frequency: range.frequency,
+        });
+      } else {
+        // Update the start and end times of the existing availability window
+        updatedAvailability[index].startTime = range.startTime;
+        updatedAvailability[index].endTime = range.endTime;
+        updatedAvailability[index].duration = range.duration;
+        updatedAvailability[index].frequency = range.frequency;
       }
-
-      // Update the start and end times of the window
-      return {
-        ...window,
-        startTime: timeRange.startTime,
-        endTime: timeRange.endTime,
-        duration: timeRange.duration,
-        frequency: timeRange.frequency,
-      };
     });
 
+    console.log('updatedAvailability', updatedAvailability);
+
     // Save the updated schedule
-    const updatedSchedule = await this.findByIdAndUpdate(
-      scheduleId,
+    const updatedSchedule = await this.findOneAndUpdate(
+      studioId,
       { availability: updatedAvailability },
       { new: true },
     );
