@@ -114,7 +114,7 @@ function StudioSchedule({ store, isMobile, firstGridItem, studioRequired, studio
 
   // if user is a teacher, show schedule with other students names, and with ability to edit
   if (isStudioTeacher) {
-    console.log('Schedule page: schedule', schedule);
+    console.log('Schedule page: ', schedule);
     console.log('Schedule page: schedule.businessHours', schedule.businessHours);
     console.log('Schedule page: schedule.availability', toJS(schedule.availability));
 
@@ -128,6 +128,7 @@ function StudioSchedule({ store, isMobile, firstGridItem, studioRequired, studio
         <div style={{ padding: isMobile ? '0px' : '0px 30px' }}>
           <TeacherCalendar 
             store={store}
+            schedule={schedule}
             businessHours={schedule.businessHours}
             availability={toJS(schedule.availability)}
             />

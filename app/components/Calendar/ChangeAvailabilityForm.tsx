@@ -39,7 +39,7 @@ type Props = {
   onClose: () => void;
   availability: any[];
   //businessHours: any[];
-  onChange: (dayOfWeek: number, start: string, end: string) => void;
+  onChange: () => void;
 };
 
 type State = {
@@ -60,9 +60,6 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
       disabled: false,
     };
 
-    console.log('ChangeAvailabilityForm: props', props);
-    console.log('ChangeAvailabilityForm: state', this.state);
-    console.log('ChangeAvailabilityForm: state.availability', this.state.availability);
   }
   public render() {
     const { open, isMobile, store } = this.props;
@@ -102,6 +99,7 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
                       <TableCell>Day</TableCell>
                       <TableCell align="right">Start Time</TableCell>
                       <TableCell align="right">End Time</TableCell>
+                      <TableCell align="right"></TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -136,6 +134,11 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
                               renderInput={(params) => <TextField {...params} />}
                             />
                           </LocalizationProvider>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Button variant="contained" onClick={() => this.handleRemoveDay(row.dayOfWeek)}>
+                            Delete
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -233,6 +236,12 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     });
 
     console.log('newAvailability', newAvailability);
+  };
+
+  private handleRemoveDay = (day: string) => {
+    const { availability } = this.state;
+    const updatedAvailability = availability.filter((row) => row.dayOfWeek !== day);
+    this.setState({ availability: updatedAvailability });
   };
 
   private getTime = (time: string) => {
@@ -334,8 +343,10 @@ class ChangeAvailabilityForm extends React.Component<Props, State> {
     try {
       const result = await currentStudio.updateAvailability(availability);
       notify('Your schedule has been modified successfully.');
-
+      console.log('availability', availability);
       const dev = process.env.NODE_ENV !== 'production';
+
+      this.props.onChange(availability);
 
       /*Router.push(
         `/discussion?studioSlug=${currentStudio.slug}&discussionSlug=${discussion.slug}`,

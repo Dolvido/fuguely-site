@@ -30,6 +30,7 @@ type Props = {
   studio: Studio;
   isMobile: boolean;
 
+  schedule: Schedule;
   businessHours: any[];
   availability: any[];
 };
@@ -37,15 +38,13 @@ type Props = {
 type State = {
   availabilityFormOpen: boolean;
   scheduleId: string;
-
-  events: any;
-  calendarWeekends: boolean;
-  calendarEvents: any;
-  availabilityType: string;
-  selectedStart: any;
-  selectedEnd: any;
   businessHours: any[];
   availability: any[];
+  selectedStart: any;
+  selectedEnd: any;
+  creatingBlankLesson: boolean;
+  creatingBreak: boolean;
+  calendarRef: React.RefObject<FullCalendar>;
 };
 
 class TeacherCalendar extends React.Component<Props, State> {
@@ -54,9 +53,12 @@ class TeacherCalendar extends React.Component<Props, State> {
 
     this.state = {
       availabilityFormOpen: false,
+      creatingBlankLesson: false,
+      creatingBreak: false,
 
       businessHours: this.props.businessHours,
       availability: this.props.availability,
+      calendarRef: React.createRef(),
     };
   }
 
@@ -71,6 +73,8 @@ class TeacherCalendar extends React.Component<Props, State> {
         <Button onClick={this.handleChangeAvailabilityButtonClick} variant="contained">
           Change Availability
         </Button>
+        <Button onClick={this.handleBlankLessonClick}>Create Blank Lesson</Button>
+        <Button onClick={this.handleBreakClick}>Create Break</Button>
         <FullCalendar
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
@@ -84,7 +88,35 @@ class TeacherCalendar extends React.Component<Props, State> {
             { title: 'event 1', date: '2021-07-01' },
             { title: 'event 2', date: '2021-07-02' },
           ]}
+          slotMinTime={"08:00:00"}
+          slotMaxTime={"22:00:00"}
           select={(info) => {
+            const { creatingBlankLesson, creatingBreak } = this.state;
+
+            if (creatingBlankLesson) {
+              // Create a blank lesson event
+              const newEvent = {
+                title: '',
+                start: info.start,
+                end: info.end,
+                editable: true,
+              };
+              this.calendarRef.current.getApi().addEvent(newEvent);
+            } else if (creatingBreak) {
+              // Create a break event
+              const newEvent = {
+                title: 'Break',
+                start: info.start,
+                end: info.end,
+                editable: false,
+                color: 'gray',
+              };
+              this.calendarRef.current.getApi().addEvent(newEvent);
+            }
+            
+
+            
+
             this.handleTimeSelect(info.start, info.end);
           }}
         />
@@ -94,6 +126,7 @@ class TeacherCalendar extends React.Component<Props, State> {
           availability={this.state.availability}
           open={this.state.availabilityFormOpen}
           onClose={this.handleAvailabilityFormClose}
+          onChange={this.handleAvailabilityChange}
         /> }
       </>
     );
@@ -107,9 +140,57 @@ class TeacherCalendar extends React.Component<Props, State> {
     this.setState({ availabilityFormOpen: true });
   };
 
+  handleBlankLessonClick = () => {
+    this.setState({ creatingBlankLesson: true });
+  };
+  
+  handleBreakClick = () => {
+    this.setState({ creatingBreak: true });
+  };
+
+  /* public method for handling availability changes */
+  public handleAvailabilityChange = (availability) => {
+    console.log('handleAvailabilityChange', availability);
+
+    const businessHours = [];
+  
+    const daysOfWeekMap = {
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+    };
+    const avails = availability;
+
+    for (const entry of avails) {
+      console.log('for loop entry', entry);
+      const dayOfWeek = daysOfWeekMap[entry.dayOfWeek];
+      const startTime = entry.startTime;
+      const endTime = entry.endTime;
+  
+      if (dayOfWeek !== undefined && startTime && endTime) {
+        businessHours.push({
+          daysOfWeek: [dayOfWeek],
+          startTime: startTime,
+          endTime: endTime,
+          backgroundColor: '#00a65a',
+        });
+      }
+    }
+    this.state.businessHours = businessHours;
+    return businessHours;
+  
+  };
+
+  
+
   /* public method for closing availability form */
   public handleAvailabilityFormClose = () => {
     this.setState({ availabilityFormOpen: false });
+    //console.log('handleAvailabilityFormClose', availability);
   };
 
   /* handleTimeSelect */
@@ -118,6 +199,7 @@ class TeacherCalendar extends React.Component<Props, State> {
     this.setState({ selectedStart: start, selectedEnd: end });
     console.log(this.state);
   };
+
 }
 
 export default observer(TeacherCalendar);
