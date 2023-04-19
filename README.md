@@ -2,11 +2,13 @@
 
 React based typescript website template for organizing music teacher's schedules and students. 
 
+WIP
+
 AWS Lambda serverless optional.
 
 Based upon https://github.com/async-labs/saas
 
-# features
+# Features
 
 * Server-side rendering for fast initial load and SEO.
 * User authentication with Google OAuth API and Passwordless, cookie, and session.
