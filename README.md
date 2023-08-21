@@ -1,6 +1,6 @@
 # fuguely
 
-React based typescript website template for organizing music teacher's schedules and students. 
+React based typescript website for organizing music teacher's schedules and students. 
 
 WIP
 
